@@ -65,6 +65,35 @@
   .doc-grid h2 { @apply mt-2 font-extrabold }
   .doc-grid p { @apply mt-1 text-sm text-slate-500 }
   .spinner { @apply h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white }
+  .filter-button { @apply rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-extrabold text-slate-500 }
+  .filter-active { @apply rounded-lg bg-navy px-4 py-2.5 text-sm font-extrabold text-white }
+  .load-card { @apply relative grid gap-5 rounded-xl border border-line bg-white p-6 shadow-panel md:grid-cols-[1.5fr_.45fr_.7fr] md:items-center }
+  .load-card.best { @apply border-wine }
+  .load-score { @apply flex flex-col border-y border-line py-4 md:border-x md:border-y-0 md:px-5 md:py-2 }
+  .load-score b { @apply text-3xl font-extrabold text-wine }
+  .load-score span { @apply text-xs font-bold text-slate-400 }
+  .route-map-pro { @apply flex flex-col gap-5 rounded-xl bg-slate-50 p-6 sm:flex-row sm:items-center sm:justify-between }
+  .route-map-pro div { @apply flex flex-col }
+  .route-map-pro small { @apply text-xs font-extrabold tracking-wider text-slate-400 }
+  .route-map-pro b { @apply mt-1 text-base font-extrabold }
+  .route-map-pro span { @apply mt-1 text-xs text-slate-500 }
+  .route-map-pro > i { @apply relative h-px flex-1 bg-wine not-italic }
+  .route-map-pro > i:before, .route-map-pro > i:after { content:''; @apply absolute -top-1 h-2 w-2 rounded-full bg-wine }
+  .route-map-pro > i:before { @apply left-0 }.route-map-pro > i:after { @apply right-0 }
+  .route-map-pro > i em { @apply absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs font-extrabold not-italic text-wine }
+  .requirement { @apply rounded-lg border border-line bg-slate-50 p-4 font-bold text-slate-600 }
+  .input-money { @apply mt-2 flex items-center rounded-lg border border-line bg-white px-4 focus-within:border-wine focus-within:ring-4 focus-within:ring-rose-100 }
+  .input-money span { @apply text-2xl font-extrabold text-slate-400 }
+  .input-money input { @apply min-w-0 flex-1 border-0 bg-transparent px-3 py-4 text-2xl font-extrabold text-ink outline-none }
+  .input-money b { @apply text-sm text-slate-400 }
+  .trip-progress { @apply grid gap-4 sm:grid-cols-4 }
+  .trip-progress div { @apply relative flex items-center gap-3 text-sm text-slate-400 }
+  .trip-progress div > span { @apply grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line bg-white font-extrabold }
+  .trip-progress div > b { @apply whitespace-nowrap }
+  .trip-progress div > i { @apply absolute left-9 top-[18px] -z-0 hidden h-px w-[calc(100%-36px)] bg-line sm:block }
+  .trip-progress div.done { @apply text-navy }
+  .trip-progress div.done > span { @apply border-wine bg-wine text-white }
+  .trip-progress div.done > i { @apply bg-wine }
 }
 
 .route-bg { position:absolute; width:620px; height:620px; right:-220px; top:18%; border:1px solid rgba(255,255,255,.08); border-radius:50%; box-shadow:0 0 0 90px rgba(255,255,255,.025),0 0 0 180px rgba(255,255,255,.02) }
