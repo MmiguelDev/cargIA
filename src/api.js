@@ -33,6 +33,7 @@ export const confirmarViaje = (shipment_id, carrier) => post('confirmar', {
 })
 export const generarOrden = shipment_id => post('orden', { shipment_id })
 export const viajesDisponibles = () => post('viajes', {})
+export const misViajes = carrier_id => post('mis-viajes', { carrier_id })
 export const enviarOferta = (shipment_id, carrier, price) => post('ofertar', {
   shipment_id,
   carrier_id: carrier.id,

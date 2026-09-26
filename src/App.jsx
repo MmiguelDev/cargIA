@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { actualizarEtapa, confirmarViaje, crearSolicitud, elegirOferta, enviarOferta, generarOrden, iniciarSesion, listarOfertas, registrar, viajesDisponibles } from './api'
+import { actualizarEtapa, confirmarViaje, crearSolicitud, elegirOferta, enviarOferta, generarOrden, iniciarSesion, listarOfertas, misViajes, registrar, viajesDisponibles } from './api'
 
 const money = value => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(value || 0)
 const dateText = value => value ? new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' }).format(new Date(`${value}T12:00:00`)) : 'Por confirmar'
@@ -126,8 +126,8 @@ const carrierLoads = [
 
 function CarrierSidebar({ page, go }) {
   const session=readSession()
-  const items=[['carrier-dashboard','Cargas disponibles','▤'],['carrier-trip','Mis viajes','▰'],['carrier-quotes','Cotizaciones','$'],['carrier-profile','Mi flotilla','▣']]
-  return <aside className="hidden w-64 shrink-0 flex-col bg-navy px-5 py-6 text-white lg:flex"><Brand dark/><span className="mt-5 w-fit rounded bg-white/10 px-3 py-1 text-[11px] font-extrabold tracking-widest text-blue-100">PORTAL TRANSPORTISTA</span><nav className="mt-10 space-y-2">{items.map(([id,label,icon])=><button key={id} onClick={()=>['carrier-dashboard','carrier-trip'].includes(id)&&go(id)} className={`nav ${page===id?'nav-active':''}`}><span>{icon}</span>{label}{id==='carrier-dashboard'&&<em>3</em>}</button>)}</nav><div className="mt-auto border-t border-white/10 pt-5"><div className="flex items-center gap-3"><span className="avatar bg-rose-100 text-wine">{initials(session?.name)}</span><div><b className="block text-sm">{session?.name||'Transportista'}</b><small className="text-white/55">Cuenta transportista</small></div></div><button onClick={()=>{localStorage.removeItem(SESSION_KEY);go('login')}} className="mt-4 text-xs font-bold text-white/45 hover:text-white">Cerrar sesión</button></div></aside>
+  const items=[['carrier-dashboard','Cargas disponibles','▤'],['carrier-trips','Mis viajes','▰'],['carrier-quotes','Cotizaciones','$'],['carrier-profile','Mi flotilla','▣']]
+  return <aside className="hidden w-64 shrink-0 flex-col bg-navy px-5 py-6 text-white lg:flex"><Brand dark/><span className="mt-5 w-fit rounded bg-white/10 px-3 py-1 text-[11px] font-extrabold tracking-widest text-blue-100">PORTAL TRANSPORTISTA</span><nav className="mt-10 space-y-2">{items.map(([id,label,icon])=><button key={id} onClick={()=>['carrier-dashboard','carrier-trips'].includes(id)&&go(id)} className={`nav ${page===id?'nav-active':''}`}><span>{icon}</span>{label}{id==='carrier-dashboard'&&<em>3</em>}</button>)}</nav><div className="mt-auto border-t border-white/10 pt-5"><div className="flex items-center gap-3"><span className="avatar bg-rose-100 text-wine">{initials(session?.name)}</span><div><b className="block text-sm">{session?.name||'Transportista'}</b><small className="text-white/55">Cuenta transportista</small></div></div><button onClick={()=>{localStorage.removeItem(SESSION_KEY);go('login')}} className="mt-4 text-xs font-bold text-white/45 hover:text-white">Cerrar sesión</button></div></aside>
 }
 
 function CarrierShell({ page, go, children, back }) {
@@ -175,12 +175,14 @@ function LiveCarrierTrip({ go, trip, offer }) {
 }
 
 function PendingCarrierDashboard({ go, selectTrip, pendingTrip }) {
+  const session=readSession()
   const [trips,setTrips]=useState([])
+  const [assignedCount,setAssignedCount]=useState(0)
   const [loading,setLoading]=useState(true)
   const [error,setError]=useState('')
   async function loadTrips(){
     setLoading(true); setError('')
-    try { const data=await viajesDisponibles(); setTrips(data.trips||[]) }
+    try { const [available,assigned]=await Promise.all([viajesDisponibles(),session?.carrier_id?misViajes(session.carrier_id):Promise.resolve({trips:[]})]); setTrips(available.trips||[]); setAssignedCount((assigned.trips||[]).length) }
     catch(err){ setError(err.message) }
     finally { setLoading(false) }
   }
@@ -223,12 +225,27 @@ function CompanyConfirmed({ go, shipment, carrier, generate, busy }) {
   </div></Shell>
 }
 
+function CarrierTrips({ go, openTrip }) {
+  const session=readSession()
+  const [trips,setTrips]=useState([])
+  const [loading,setLoading]=useState(true)
+  const [error,setError]=useState('')
+  async function load(){
+    if(!session?.carrier_id){setError('Tu sesión todavía no incluye el perfil de transportista. Cierra sesión y vuelve a iniciar.');setLoading(false);return}
+    setLoading(true);setError('')
+    try{const data=await misViajes(session.carrier_id);setTrips(data.trips||[])}
+    catch(err){setError(err.message)}finally{setLoading(false)}
+  }
+  useEffect(()=>{load()},[session?.carrier_id])
+  return <CarrierShell page="carrier-trips" go={go}><div className="page max-w-7xl"><div className="heading"><div><p className="eyebrow">OPERACIÓN ASIGNADA</p><h1>Mis viajes</h1><p>Servicios confirmados para tu perfil de transportista.</p></div><button className="filter-active" onClick={load}>↻ Actualizar</button></div><div className="grid gap-4 md:grid-cols-3"><article className="panel metric"><span className="metric-icon">▰</span><div><small>TOTAL ASIGNADOS</small><b>{loading?'—':String(trips.length).padStart(2,'0')}</b><p>Desde Supabase</p></div></article><article className="panel metric"><span className="metric-icon">⌁</span><div><small>EN OPERACIÓN</small><b>{String(trips.filter(x=>['EN_RECOLECCION','EN_TRANSITO'].includes(x.status)).length).padStart(2,'0')}</b><p>Con seguimiento activo</p></div></article><article className="panel metric"><span className="metric-icon">✓</span><div><small>ENTREGADOS</small><b>{String(trips.filter(x=>x.status==='ENTREGADO').length).padStart(2,'0')}</b><p>Viajes completados</p></div></article></div>{error&&<div className="auth-error mt-6 flex items-center justify-between"><span>{error}</span><button onClick={load}>Reintentar</button></div>}<section className="mt-7"><div className="mb-4 flex items-center justify-between"><h2 className="text-xl font-extrabold">Viajes de tu cuenta</h2><span className="text-sm font-bold text-slate-400">{trips.length} resultados</span></div>{loading?<div className="grid gap-4"><div className="skeleton-card"/><div className="skeleton-card"/></div>:trips.length?<div className="space-y-4">{trips.map(trip=><article key={trip.shipment_id} className="load-card"><div><div className="flex flex-wrap items-center gap-2"><span className="status">CM-{String(trip.shipment_id).padStart(4,'0')}</span><span className="rounded-full bg-rose-100 px-3 py-1.5 text-xs font-extrabold text-wine">● {trip.status}</span></div><h3 className="mt-4 text-xl font-extrabold">{trip.origin} <span className="text-wine">→</span> {trip.destination}</h3><p className="mt-2 text-sm text-slate-500">{trip.cargo_type} · {Number(trip.weight_kg).toLocaleString('es-MX')} kg · {trip.vehicle_type}</p><div className="mt-5 flex flex-wrap gap-4 text-xs font-bold text-slate-500"><span>▣ {dateText(trip.travel_date)}</span><span>Precio {money(trip.price)}</span></div></div><div className="load-score"><b>{money(trip.price)}</b><span>precio acordado</span></div><div className="text-right"><small className="eyebrow">ESTADO</small><b className="mt-1 block text-lg">{trip.status.replaceAll('_',' ')}</b><Button className="mt-4" onClick={()=>openTrip(trip)}>Abrir viaje →</Button></div></article>)}</div>:!error&&<div className="panel p-10 text-center"><h2 className="text-2xl font-extrabold">No tienes viajes asignados</h2><p className="mt-2 text-slate-500">Los servicios aparecerán aquí cuando una empresa acepte tu oferta.</p><Button secondary className="mt-5" onClick={()=>go('carrier-dashboard')}>Ver cargas disponibles</Button></div>}</section></div></CarrierShell>
+}
+
 function CarrierBidStatus({ go, trip }) {
   const session=readSession()
   const [offer,setOffer]=useState(null)
   const [loading,setLoading]=useState(true)
   const [error,setError]=useState('')
-  const [status,setStatus]=useState('ASSIGNED')
+  const [status,setStatus]=useState(trip?.status||'ASSIGNED')
   const [busy,setBusy]=useState(false)
   async function refresh(){
     if(!trip)return
@@ -239,7 +256,7 @@ function CarrierBidStatus({ go, trip }) {
   useEffect(()=>{refresh()},[trip?.shipment_id,session?.id])
   async function advance(stage){setBusy(true);setError('');try{const data=await actualizarEtapa(trip.shipment_id,stage,'transportista');setStatus(data.status||(stage==='recoleccion'?'EN_RECOLECCION':'EN_TRANSITO'))}catch(err){setError(err.message)}finally{setBusy(false)}}
   if(!trip)return <PendingCarrierTrip go={go} trip={trip}/>
-  const accepted=offer?.status==='ACCEPTED'
+  const accepted=offer?.status==='ACCEPTED'||['ASSIGNED','EN_RECOLECCION','EN_TRANSITO','ENTREGADO'].includes(trip.status)
   return <CarrierShell page="carrier-trip" go={go}><div className="page max-w-6xl"><div className="heading"><div><p className="eyebrow">SOLICITUD CM-{String(trip.shipment_id).padStart(4,'0')}</p><h1>{trip.origin} → {trip.destination}</h1><p>{trip.cargo_type} · {Number(trip.weight_kg).toLocaleString('es-MX')} kg</p></div><span className={`rounded-full px-4 py-2 text-sm font-extrabold ${accepted?'bg-rose-100 text-wine':'bg-amber-100 text-amber-800'}`}>● {loading?'CONSULTANDO':accepted?status:(offer?.status||'PENDING')}</span></div>{error&&<div className="auth-error mb-5">{error}</div>}<div className="grid gap-5 lg:grid-cols-[1.35fr_.7fr]"><section className="panel p-7"><div className="route-map-pro"><div><small>ORIGEN</small><b>{trip.origin}</b><span>{dateText(trip.travel_date)}</span></div><i><em>{accepted?'Viaje autorizado':'Oferta en revisión'}</em></i><div className="text-right"><small>DESTINO</small><b>{trip.destination}</b><span>Por coordinar</span></div></div><div className="mt-7 grid gap-4 border-t border-line pt-6 sm:grid-cols-2"><Info label="MERCANCÍA" value={trip.cargo_type}/><Info label="EQUIPO" value={trip.vehicle_type}/><Info label="COTIZACIÓN" value={offer?.price?money(offer.price):'Consultando'}/><Info label="DECISIÓN" value={offer?.status||'Pendiente'}/></div></section><aside className="space-y-5"><section className="panel p-6"><small className="eyebrow">SIGUIENTE ACCIÓN</small><h2 className="mt-3 text-xl font-extrabold">{accepted?'Actualiza la operación':'Espera la decisión'}</h2><p className="mt-2 text-sm leading-6 text-slate-500">{accepted?'Puedes avanzar recolección y tránsito. La empresa confirmará la entrega.':'La carga no se asignará hasta que la empresa elija una oferta.'}</p>{accepted&&<div className="mt-5 grid gap-3"><Button busy={busy} disabled={status!=='ASSIGNED'} onClick={()=>advance('recoleccion')}>Iniciar recolección</Button><Button secondary busy={busy} disabled={status!=='EN_RECOLECCION'} onClick={()=>advance('transito')}>Iniciar tránsito</Button></div>}<Button secondary className="mt-3 w-full" onClick={refresh}>Actualizar estado</Button></section></aside></div></div></CarrierShell>
 }
 
@@ -301,6 +318,7 @@ export default function App() {
     setPage('carrier-dashboard')
   }
   function selectAvailableTrip(trip) { setSelectedTrip(trip); setPage('carrier-load') }
+  function selectAssignedTrip(trip) { setAcceptedTrip(trip); localStorage.setItem('cargamatch_pending_trip',JSON.stringify(trip)); setPage('carrier-trip') }
   async function acceptAvailableTrip(price) {
     if(!selectedTrip){fail(new Error('Selecciona un viaje antes de enviar tu disponibilidad.'));return}
     const session=readSession()
@@ -349,6 +367,7 @@ export default function App() {
     {page==='confirmed'&&shipment&&carrier&&<CompanyConfirmed {...props} shipment={shipment} carrier={carrier} generate={generate} busy={busy==='order'}/>} 
     {page==='order'&&order&&<Order {...props} shipment={shipment} carrier={carrier} order={order}/>} 
     {page==='carrier-dashboard'&&<PendingCarrierDashboard {...props} selectTrip={selectAvailableTrip} pendingTrip={acceptedTrip}/>} 
+    {page==='carrier-trips'&&<CarrierTrips {...props} openTrip={selectAssignedTrip}/>} 
     {page==='carrier-load'&&<PendingCarrierLoad {...props} trip={selectedTrip} submitInterest={acceptAvailableTrip} busy={busy==='offer'}/>} 
     {page==='carrier-trip'&&<CarrierBidStatus {...props} trip={acceptedTrip}/>} 
   </div>{notice&&<div className="notice" role="alert"><b>{notice.startsWith('Cotización')?'Operación exitosa':'No se pudo completar'}</b><span>{notice}</span><button onClick={()=>setNotice(null)}>×</button></div>}</>
