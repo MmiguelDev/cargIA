@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#071b2f" />
+    <meta name="description" content="CargaMatch convierte una necesidad logística en un viaje asignado." />
+    <title>CargaMatch · Asignación inteligente de transporte</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23071b2f'/%3E%3Cpath d='M13 20h26v22H13zM39 27h8l6 8v7H39z' fill='%23c7f36b'/%3E%3Ccircle cx='23' cy='45' r='5' fill='white'/%3E%3Ccircle cx='45' cy='45' r='5' fill='white'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="create.css" />
+    <link rel="stylesheet" href="review.css" />
+    <link rel="stylesheet" href="analysis.css" />
+    <link rel="stylesheet" href="matches.css" />
+    <link rel="stylesheet" href="confirmed.css" />
+    <link rel="stylesheet" href="order.css" />
+    <link rel="stylesheet" href="order-responsive.css" />
+  </head>
+  <body>
+    <div id="app">
+      <section class="screen login-screen is-active" data-screen="login" aria-labelledby="login-title">
+        <div class="login-brand">
+          <a class="brand" href="#" aria-label="CargaMatch inicio">
+            <span class="brand-mark" aria-hidden="true">CM</span>
+            <span>CARGA<span>MATCH</span></span>
+          </a>
+          <div class="route-art" aria-hidden="true">
+            <div class="route-line"></div>
+            <div class="route-city route-city-a"><b>MTY</b><small>Origen</small></div>
+            <div class="route-truck">▰</div>
+            <div class="route-city route-city-b"><b>SLW</b><small>Destino</small></div>
+          </div>
+          <div class="login-copy">
+            <span class="eyebrow">LOGÍSTICA, RESUELTA</span>
+            <h1>De una necesidad<br />a un viaje asignado.</h1>
+            <p>Describe tu carga. Nosotros encontramos el transporte correcto.</p>
+          </div>
+          <div class="trust-row"><span>IA que entiende tu carga</span><span>Matches en segundos</span><span>Proceso centralizado</span></div>
+        </div>
+        <div class="login-panel">
+          <div class="login-card">
+            <span class="mobile-brand brand"><span class="brand-mark">CM</span><span>CARGA<span>MATCH</span></span></span>
+            <p class="step-label">ACCESO AL MVP</p>
+            <h2 id="login-title">Bienvenido de vuelta</h2>
+            <p class="muted">Entra como productor para iniciar la demostración.</p>
+            <label for="email">Correo electrónico</label>
+            <input id="email" type="email" value="productor@demo.mx" autocomplete="email" />
+            <label for="password">Contraseña</label>
+            <input id="password" type="password" value="cargamatch" autocomplete="current-password" />
+            <button class="button button-primary button-block" data-go="dashboard">Entrar a CargaMatch <span>→</span></button>
+            <p class="demo-note"><span></span> Datos de demostración listos</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen app-screen" data-screen="dashboard" aria-labelledby="dashboard-title">
+        <aside class="sidebar">
+          <a class="brand brand-light" href="#"><span class="brand-mark">CM</span><span>CARGA<span>MATCH</span></span></a>
+          <nav aria-label="Navegación principal">
+            <button class="nav-item active" data-go="dashboard"><span>⌂</span> Inicio</button>
+            <button class="nav-item" data-go="create"><span>＋</span> Nueva carga</button>
+            <button class="nav-item"><span>▤</span> Solicitudes <small>3</small></button>
+            <button class="nav-item"><span>▣</span> Viajes</button>
+          </nav>
+          <div class="sidebar-user"><div class="avatar">AM</div><div><b>Ana Martínez</b><small>Productor</small></div><button aria-label="Cerrar sesión" data-go="login">↪</button></div>
+        </aside>
+        <main class="main-content">
+          <header class="topbar"><button class="menu-button" aria-label="Abrir menú">☰</button><div class="top-actions"><button class="icon-button" aria-label="Notificaciones">●</button><div class="avatar">AM</div></div></header>
+          <div class="page-wrap">
+            <div class="page-heading"><div><p class="eyebrow">SÁBADO, 26 DE SEPTIEMBRE</p><h1 id="dashboard-title">Buenos días, Ana.</h1><p>Tu operación logística está bajo control.</p></div><button class="button button-primary" data-go="create">＋ Crear nueva carga</button></div>
+            <div class="metrics">
+              <article class="metric"><span class="metric-icon lime">▤</span><div><small>SOLICITUDES ACTIVAS</small><b>03</b><p><span>↑ 2</span> esta semana</p></div></article>
+              <article class="metric"><span class="metric-icon blue">▰</span><div><small>VIAJES EN CURSO</small><b>01</b><p>Entrega mañana</p></div></article>
+              <article class="metric"><span class="metric-icon yellow">⌁</span><div><small>COTIZACIONES</small><b>06</b><p>3 nuevas por revisar</p></div></article>
+            </div>
+            <div class="dashboard-grid">
+              <section class="panel activity-panel"><div class="panel-head"><div><h2>Actividad reciente</h2><p>Solicitudes y viajes de tu empresa</p></div><button class="text-button">Ver todas →</button></div>
+                <div class="activity-list">
+                  <article><span class="route-badge">MTY<small>→</small>SLW</span><div><b>Autopartes · 8,000 kg</b><p>2 oct · Caja seca</p></div><span class="status status-quote">3 cotizaciones</span><strong>$14,800</strong></article>
+                  <article><span class="route-badge">QRO<small>→</small>GDL</span><div><b>Electrodomésticos · 4,500 kg</b><p>28 sep · Caja seca</p></div><span class="status status-trip">En tránsito</span><strong>$21,300</strong></article>
+                  <article><span class="route-badge">CDMX<small>→</small>PUE</span><div><b>Empaque · 2,200 kg</b><p>30 sep · Rabón</p></div><span class="status status-published">Publicada</span><strong>—</strong></article>
+                </div>
+              </section>
+              <aside class="panel ai-panel"><span class="ai-badge">✦ CARGAMATCH AI</span><h2>¿Tienes algo que mover?</h2><p>Describe qué necesitas transportar y encontraremos las mejores opciones.</p><button class="button button-light button-block" data-go="create">Crear con IA →</button><div class="ai-grid" aria-hidden="true"></div></aside>
+            </div>
+          </div>
+        </main>
+      </section>
+      <section class="screen app-screen" data-screen="create" aria-labelledby="create-title">
+        <aside class="sidebar">
+          <a class="brand brand-light" href="#" data-go="dashboard"><span class="brand-mark">CM</span><span>CARGA<span>MATCH</span></span></a>
+          <nav aria-label="Navegación principal">
+            <button class="nav-item" data-go="dashboard"><span>⌂</span> Inicio</button>
+            <button class="nav-item active" data-go="create"><span>＋</span> Nueva carga</button>
+            <button class="nav-item"><span>▤</span> Solicitudes <small>3</small></button>
+            <button class="nav-item"><span>▣</span> Viajes</button>
+          </nav>
+          <div class="sidebar-user"><div class="avatar">AM</div><div><b>Ana Martínez</b><small>Productor</small></div><button aria-label="Cerrar sesión" data-go="login">↪</button></div>
+        </aside>
+        <main class="main-content create-main">
+          <header class="topbar"><button class="menu-button" aria-label="Abrir menú">☰</button><button class="back-link" data-go="dashboard">← Volver al inicio</button><div class="top-actions"><button class="icon-button" aria-label="Notificaciones">●</button><div class="avatar">AM</div></div></header>
+          <div class="create-wrap">
+            <div class="create-heading">
+              <p class="eyebrow">NUEVA SOLICITUD</p>
+              <h1 id="create-title">¿Qué necesitas transportar?</h1>
+              <p>Cuéntanos los detalles como lo harías con una persona. CargaMatch AI se encarga de estructurarlos.</p>
+            </div>
+            <ol class="flow-steps" aria-label="Proceso de creación">
+              <li class="current"><span>1</span><div><b>Describe</b><small>Cuéntanos tu necesidad</small></div></li>
+              <li><span>2</span><div><b>Revisa</b><small>Confirma los datos</small></div></li>
+              <li><span>3</span><div><b>Publica</b><small>Encuentra transporte</small></div></li>
+            </ol>
+            <div class="create-grid">
+              <section class="composer-card">
+                <div class="composer-head"><span class="ai-orb">✦</span><div><b>CARGAMATCH AI</b><small>Describe tu carga en una sola frase</small></div><span class="online-pill"><i></i> Lista</span></div>
+                <label class="sr-only" for="shipment-request">Descripción de la carga</label>
+                <textarea id="shipment-request" rows="7" maxlength="500" placeholder="Ej. Necesito transportar 8 toneladas de autopartes de Monterrey a Saltillo el próximo viernes.">Necesito transportar 8 toneladas de autopartes de Monterrey a Saltillo el próximo viernes.</textarea>
+                <div class="composer-footer"><span><b id="char-count">99</b>/500 caracteres</span><button class="voice-button" type="button" aria-label="Dictar solicitud">◉ <span>Dictar</span></button></div>
+                <button class="button button-primary button-analyze" type="button" data-go="review">Analizar solicitud <span>✦</span></button>
+                <p class="privacy-note">La IA solo utilizará esta información para preparar tu solicitud.</p>
+              </section>
+              <aside class="guide-card">
+                <span class="guide-icon">⌁</span>
+                <h2>Mientras más detalles, mejor match.</h2>
+                <p>Incluye estos datos si los conoces:</p>
+                <ul>
+                  <li><span>01</span><div><b>Origen y destino</b><small>Ciudades o zonas de carga y entrega</small></div></li>
+                  <li><span>02</span><div><b>Qué vas a transportar</b><small>Tipo de mercancía y peso aproximado</small></div></li>
+                  <li><span>03</span><div><b>Cuándo lo necesitas</b><small>Fecha de recolección o entrega</small></div></li>
+                </ul>
+              </aside>
+            </div>
+            <section class="examples-row" aria-labelledby="examples-title">
+              <div><p class="eyebrow">¿NECESITAS INSPIRACIÓN?</p><h2 id="examples-title">Prueba con un ejemplo</h2></div>
+              <button class="example-chip" data-example="Necesito transportar 12 toneladas de acero de Monclova a Apodaca el 5 de octubre."><span>Acero</span> Monclova → Apodaca</button>
+              <button class="example-chip" data-example="Quiero mover 4 toneladas de alimentos refrigerados de Querétaro a Guadalajara este lunes."><span>Refrigerado</span> Querétaro → Guadalajara</button>
+            </section>
+          </div>
+        </main>
+      </section>
+      <section class="screen app-screen" data-screen="review" aria-labelledby="review-title">
+        <aside class="sidebar">
+          <a class="brand brand-light" href="#" data-go="dashboard"><span class="brand-mark">CM</span><span>CARGA<span>MATCH</span></span></a>
+          <nav aria-label="Navegación principal">
+            <button class="nav-item" data-go="dashboard"><span>⌂</span> Inicio</button>
+            <button class="nav-item active" data-go="create"><span>＋</span> Nueva carga</button>
+            <button class="nav-item"><span>▤</span> Solicitudes <small>3</small></button>
+            <button class="nav-item"><span>▣</span> Viajes</button>
+          </nav>
+          <div class="sidebar-user"><div class="avatar">AM</div><div><b>Ana Martínez</b><small>Productor</small></div><button aria-label="Cerrar sesión" data-go="login">↪</button></div>
+        </aside>
+        <main class="main-content review-main">
+          <header class="topbar"><button class="menu-button" aria-label="Abrir menú">☰</button><button class="back-link" data-go="create">← Editar descripción</button><div class="top-actions"><button class="icon-button" aria-label="Notificaciones">●</button><div class="avatar">AM</div></div></header>
+          <div class="review-wrap">
+            <div class="review-head">
+              <div><p class="eyebrow">SOLICITUD INTERPRETADA</p><h1 id="review-title">Revisa los datos de tu carga</h1><p>Esto es lo que CargaMatch AI entendió. Puedes corregir cualquier dato antes de publicar.</p></div>
+              <span class="confidence-badge"><i>✦</i><span><b>96%</b> confianza de IA</span></span>
+            </div>
+            <ol class="flow-steps review-flow" aria-label="Proceso de creación">
+              <li class="done"><span>✓</span><div><b>Describe</b><small>Solicitud interpretada</small></div></li>
+              <li class="current"><span>2</span><div><b>Revisa</b><small>Confirma los datos</small></div></li>
+              <li><span>3</span><div><b>Publica</b><small>Encuentra transporte</small></div></li>
+            </ol>
+            <div class="review-grid">
+              <section class="review-form-card">
+                <div class="section-title"><span>01</span><div><h2>Ruta del envío</h2><p>Origen y destino detectados</p></div><span class="ai-verified">✦ Detectado por IA</span></div>
+                <div class="route-fields">
+                  <label><span>ORIGEN</span><div class="field-with-icon"><i>●</i><input value="Monterrey, Nuevo León" aria-label="Origen" /></div></label>
+                  <span class="route-arrow">→</span>
+                  <label><span>DESTINO</span><div class="field-with-icon destination"><i>●</i><input value="Saltillo, Coahuila" aria-label="Destino" /></div></label>
+                </div>
+                <div class="mini-route" aria-label="Ruta Monterrey a Saltillo"><span>MTY</span><div><i></i><b>87 km</b><i></i></div><span>SLW</span></div>
+                <div class="section-divider"></div>
+                <div class="section-title"><span>02</span><div><h2>Detalles de la carga</h2><p>Mercancía, capacidad y equipo</p></div></div>
+                <div class="detail-fields">
+                  <label><span>TIPO DE CARGA</span><input value="Autopartes" aria-label="Tipo de carga" /></label>
+                  <label><span>PESO</span><div class="input-suffix"><input value="8,000" aria-label="Peso" /><b>kg</b></div></label>
+                  <label><span>FECHA DE RECOLECCIÓN</span><input type="date" value="2026-10-02" aria-label="Fecha de recolección" /></label>
+                  <label><span>VEHÍCULO SUGERIDO</span><select aria-label="Vehículo sugerido"><option>Caja seca</option><option>Rabón</option><option>Refrigerado</option></select></label>
+                </div>
+              </section>
+              <aside class="shipment-summary">
+                <div class="summary-head"><span class="summary-icon">▰</span><div><small>RESUMEN DE CARGA</small><b>MTY → SLW</b></div></div>
+                <div class="summary-map"><span class="map-city map-origin">Monterrey<i></i></span><span class="map-road">··············</span><span class="map-truck">▰</span><span class="map-city map-destination">Saltillo<i></i></span></div>
+                <dl>
+                  <div><dt>Mercancía</dt><dd>Autopartes</dd></div>
+                  <div><dt>Peso total</dt><dd>8,000 kg</dd></div>
+                  <div><dt>Recolección</dt><dd>2 oct 2026</dd></div>
+                  <div><dt>Equipo</dt><dd>Caja seca</dd></div>
+                </dl>
+                <div class="ready-box"><span>✓</span><div><b>Todo listo para publicar</b><small>La solicitud contiene los datos necesarios.</small></div></div>
+                <button class="button button-primary button-block publish-button" data-go="analysis">Publicar y buscar transportistas <span>→</span></button>
+                <button class="text-button edit-request" data-go="create">← Modificar descripción original</button>
+              </aside>
+            </div>
+          </div>
+        </main>
+      </section>
+      <section class="screen analysis-screen" data-screen="analysis" aria-labelledby="analysis-title">
+        <header class="analysis-topbar">
+          <a class="brand brand-light" href="#" data-go="dashboard"><span class="brand-mark">CM</span><span>CARGA<span>MATCH</span></span></a>
+          <div class="analysis-route-pill"><span>MTY</span><i>→</i><span>SLW</span><small>Autopartes · 8,000 kg</small></div>
+          <button class="cancel-link" data-go="review">Cancelar búsqueda</button>
+        </header>
+        <main class="analysis-content">
+          <div class="analysis-intro">
+            <span class="ai-live"><i></i> CARGAMATCH AI TRABAJANDO</span>
+            <h1 id="analysis-title">Encontrando el transporte ideal</h1>
+            <p>Estamos cruzando tu solicitud con nuestra red de transportistas.</p>
+          </div>
+          <div class="analysis-stage">
+            <section class="process-card">
+              <div class="process-head"><div><span>PROGRESO DEL ANÁLISIS</span><b>68%</b></div><div class="progress-track"><i></i></div></div>
+              <ol class="process-list">
+                <li class="complete"><span>✓</span><div><b>Analizando la carga</b><small>Características y requerimientos identificados</small></div><time>0.4s</time></li>
+                <li class="complete"><span>✓</span><div><b>Validando la ruta</b><small>Monterrey, NL → Saltillo, COAH</small></div><time>0.7s</time></li>
+                <li class="complete"><span>✓</span><div><b>Calculando distancia</b><small>87 km · 1 h 14 min estimados</small></div><time>0.3s</time></li>
+                <li class="active"><span><i></i></span><div><b>Consultando transportistas</b><small>Revisando disponibilidad en nuestra red</small></div><strong>En proceso</strong></li>
+                <li><span>5</span><div><b>Comparando capacidades</b><small>Peso, equipo y cobertura</small></div></li>
+                <li><span>6</span><div><b>Generando coincidencias</b><small>Ordenando las mejores propuestas</small></div></li>
+              </ol>
+            </section>
+            <aside class="analysis-visual">
+              <div class="radar-box" aria-label="Conexión entre Monterrey y Saltillo">
+                <div class="radar-grid"></div><div class="radar-ring ring-one"></div><div class="radar-ring ring-two"></div>
+                <span class="radar-node origin-node"><i></i><b>MTY</b><small>Monterrey</small></span>
+                <span class="radar-path"><i></i></span>
+                <span class="radar-truck">▰</span>
+                <span class="radar-node destination-node"><i></i><b>SLW</b><small>Saltillo</small></span>
+              </div>
+              <div class="live-metrics">
+                <article><span>TRANSPORTISTAS<br />EVALUADOS</span><b>24</b><i>+6</i></article>
+                <article><span>COMPATIBLES<br />HASTA AHORA</span><b>03</b><i class="lime-text">Match</i></article>
+              </div>
+              <div class="analysis-note"><span>✦</span><p><b>Buscando el mejor equilibrio</b><small>Capacidad, ruta, disponibilidad y vehículo.</small></p></div>
+            </aside>
+          </div>
+          <div class="analysis-bottom"><span><i></i> Consulta segura en tiempo real</span><p>Esto tomará menos de un minuto.</p></div>
+          <button class="analysis-results-button" data-go="matches">Ver 3 coincidencias <span>→</span></button>
+        </main>
+      </section>
+      <section class="screen app-screen" data-screen="matches" aria-labelledby="matches-title">
+        <aside class="sidebar">
+          <a class="brand brand-light" href="#" data-go="dashboard"><span class="brand-mark">CM</span><span>CARGA<span>MATCH</span></span></a>
+          <nav aria-label="Navegación principal">
+            <button class="nav-item" data-go="dashboard"><span>⌂</span> Inicio</button>
+            <button class="nav-item active"><span>⌁</span> Matches</button>
+            <button class="nav-item"><span>▤</span> Solicitudes <small>3</small></button>
+            <button class="nav-item"><span>▣</span> Viajes</button>
+          </nav>
+          <div class="sidebar-user"><div class="avatar">AM</div><div><b>Ana Martínez</b><small>Productor</small></div><button aria-label="Cerrar sesión" data-go="login">↪</button></div>
+        </aside>
+        <main class="main-content matches-main">
+          <header class="topbar"><button class="menu-button" aria-label="Abrir menú">☰</button><button class="back-link" data-go="review">← Ver solicitud</button><div class="top-actions"><button class="icon-button" aria-label="Notificaciones">●</button><div class="avatar">AM</div></div></header>
+          <div class="matches-wrap">
+            <div class="matches-hero">
+              <div><span class="success-kicker"><i>✓</i> MATCH COMPLETADO</span><h1 id="matches-title">3 transportistas compatibles</h1><p>Comparamos 24 opciones para mostrarte las mejores propuestas.</p></div>
+              <div class="route-summary-chip"><span><small>ORIGEN</small><b>Monterrey</b></span><i>→</i><span><small>DESTINO</small><b>Saltillo</b></span><em>87 km</em></div>
+            </div>
+            <div class="matches-toolbar">
+              <div class="result-tabs"><button class="active">Recomendados</button><button>Menor precio</button><button>Mayor puntuación</button></div>
+              <div class="cargo-mini"><span>Autopartes</span><span>8,000 kg</span><span>2 oct 2026</span><span>Caja seca</span></div>
+            </div>
+            <div class="match-list">
+              <article class="match-card recommended">
+                <div class="recommended-ribbon">✦ MEJOR OPCIÓN</div>
+                <div class="carrier-cell"><span class="carrier-logo tm">TM</span><div><h2>Transportes MX</h2><p><span>★ 4.9</span> · 128 viajes completados</p><small>Empresa verificada</small></div></div>
+                <div class="score-cell"><div class="score-ring score-96"><b>96</b><small>% match</small></div><button class="why-match">¿Por qué este match?</button></div>
+                <div class="fit-cell"><div><span>CAPACIDAD</span><b>10,000 kg</b><i><em style="width:80%"></em></i></div><div><span>VEHÍCULO</span><b>Caja seca · 48 pies</b><small>Disponible para tu fecha</small></div></div>
+                <div class="quote-cell"><span>COTIZACIÓN TOTAL</span><b>$14,800 <small>MXN</small></b><p>Incluye casetas y seguro</p><button class="button button-primary select-offer" data-go="confirmed">Seleccionar propuesta →</button></div>
+              </article>
+              <article class="match-card">
+                <div class="carrier-cell"><span class="carrier-logo ln">LN</span><div><h2>Logística Norte</h2><p><span>★ 4.7</span> · 94 viajes completados</p><small>Empresa verificada</small></div></div>
+                <div class="score-cell"><div class="score-ring score-89"><b>89</b><small>% match</small></div><button class="why-match">Ver compatibilidad</button></div>
+                <div class="fit-cell"><div><span>CAPACIDAD</span><b>15,000 kg</b><i><em style="width:54%"></em></i></div><div><span>VEHÍCULO</span><b>Caja seca · 53 pies</b><small>Disponible para tu fecha</small></div></div>
+                <div class="quote-cell"><span>COTIZACIÓN TOTAL</span><b>$15,650 <small>MXN</small></b><p>Incluye casetas y seguro</p><button class="button select-offer secondary-offer">Seleccionar propuesta →</button></div>
+              </article>
+              <article class="match-card">
+                <div class="carrier-cell"><span class="carrier-logo fn">FN</span><div><h2>Fletes del Norte</h2><p><span>★ 4.6</span> · 76 viajes completados</p><small>Empresa verificada</small></div></div>
+                <div class="score-cell"><div class="score-ring score-82"><b>82</b><small>% match</small></div><button class="why-match">Ver compatibilidad</button></div>
+                <div class="fit-cell"><div><span>CAPACIDAD</span><b>9,000 kg</b><i><em style="width:89%"></em></i></div><div><span>VEHÍCULO</span><b>Caja seca · 48 pies</b><small>Disponible con ajuste de horario</small></div></div>
+                <div class="quote-cell"><span>COTIZACIÓN TOTAL</span><b>$13,950 <small>MXN</small></b><p>Seguro básico incluido</p><button class="button select-offer secondary-offer">Seleccionar propuesta →</button></div>
+              </article>
+            </div>
+            <div class="matching-explainer"><span>✦</span><p><b>¿Cómo calculamos la compatibilidad?</b><small>Capacidad 30% · Ruta 30% · Disponibilidad 20% · Vehículo 20%</small></p><button>Ver metodología</button></div>
+          </div>
+        </main>
+      </section>
+      <section class="screen app-screen" data-screen="confirmed" aria-labelledby="confirmed-title">
+        <aside class="sidebar">
+          <a class="brand brand-light" href="#" data-go="dashboard"><span class="brand-mark">CM</span><span>CARGA<span>MATCH</span></span></a>
+          <nav aria-label="Navegación principal">
+            <button class="nav-item" data-go="dashboard"><span>⌂</span> Inicio</button>
+            <button class="nav-item"><span>▤</span> Solicitudes <small>3</small></button>
+            <button class="nav-item active"><span>▣</span> Viajes</button>
+          </nav>
+          <div class="sidebar-user"><div class="avatar">AM</div><div><b>Ana Martínez</b><small>Productor</small></div><button aria-label="Cerrar sesión" data-go="login">↪</button></div>
+        </aside>
+        <main class="main-content confirmed-main">
+          <header class="topbar"><button class="menu-button" aria-label="Abrir menú">☰</button><span class="secure-label">● Confirmación segura</span><div class="top-actions"><button class="icon-button" aria-label="Notificaciones">●</button><div class="avatar">AM</div></div></header>
+          <div class="confirmed-wrap">
+            <section class="confirmation-banner">
+              <div class="success-seal"><span>✓</span><i></i><i></i></div>
+              <div><p class="eyebrow">ASIGNACIÓN COMPLETADA</p><h1 id="confirmed-title">¡Tu viaje está confirmado!</h1><p>Transportes MX recibió la asignación. Toda la información quedó registrada.</p></div>
+              <div class="trip-id"><small>FOLIO DEL VIAJE</small><b>CM-026-1048</b><button type="button">Copiar</button></div>
+            </section>
+            <div class="confirmation-grid">
+              <section class="trip-card">
+                <div class="trip-card-head"><div><span class="trip-status"><i></i> CONFIRMADO</span><h2>Monterrey → Saltillo</h2><p>Autopartes · 8,000 kg · Caja seca</p></div><span class="trip-date"><small>RECOLECCIÓN</small><b>02 OCT</b><em>2026 · 08:00 h</em></span></div>
+                <div class="confirmed-route-map">
+                  <div class="confirmed-city"><span>MTY</span><div><b>Monterrey</b><small>Nuevo León</small></div></div>
+                  <div class="confirmed-road"><i></i><span>87 km · 1 h 14 min</span><i></i><b>▰</b></div>
+                  <div class="confirmed-city destination"><span>SLW</span><div><b>Saltillo</b><small>Coahuila</small></div></div>
+                </div>
+                <div class="trip-details-grid">
+                  <div><span class="detail-icon">▣</span><p><small>FECHA Y HORA</small><b>2 oct · 08:00 h</b><em>Recolección programada</em></p></div>
+                  <div><span class="detail-icon">▰</span><p><small>VEHÍCULO</small><b>Caja seca · 48 pies</b><em>Capacidad 10,000 kg</em></p></div>
+                  <div><span class="detail-icon">◎</span><p><small>OPERADOR</small><b>Por asignar</b><em>Disponible 24 h antes</em></p></div>
+                  <div><span class="detail-icon">$</span><p><small>PRECIO ACORDADO</small><b>$14,800 MXN</b><em>Casetas y seguro incluidos</em></p></div>
+                </div>
+                <div class="trip-timeline"><div class="done"><i>✓</i><span><b>Solicitud creada</b><small>Hoy · 11:32</small></span></div><em></em><div class="done"><i>✓</i><span><b>Transportista asignado</b><small>Hoy · 11:34</small></span></div><em></em><div><i>3</i><span><b>Recolección</b><small>2 oct · 08:00</small></span></div><em></em><div><i>4</i><span><b>Entrega</b><small>2 oct · estimada</small></span></div></div>
+              </section>
+              <aside class="carrier-confirmed-card">
+                <div class="carrier-confirmed-head"><span class="carrier-logo tm">TM</span><div><small>TRANSPORTISTA ASIGNADO</small><h2>Transportes MX</h2><p><span>★ 4.9</span> · Empresa verificada</p></div></div>
+                <dl><div><dt>Contacto</dt><dd>Mariana López</dd></div><div><dt>Teléfono</dt><dd>+52 •••• 4821</dd></div><div><dt>Viajes completados</dt><dd>128</dd></div><div><dt>Compatibilidad</dt><dd class="match-value">96%</dd></div></dl>
+                <div class="carrier-message"><span>✦</span><p><b>¿Por qué fue seleccionado?</b><small>Tiene la capacidad, el vehículo y la disponibilidad ideales para esta ruta.</small></p></div>
+                <button class="button button-primary button-block generate-order" data-go="order">Generar orden de servicio <span>→</span></button>
+                <button class="button button-block dashboard-return" data-go="dashboard">Volver al inicio</button>
+              </aside>
+            </div>
+            <p class="confirmation-help">¿Necesitas ayuda? <button>Contacta a soporte</button> · Conserva tu folio para cualquier aclaración.</p>
+          </div>
+        </main>
+      </section>
+      <section class="screen app-screen" data-screen="order" aria-labelledby="order-title">
+        <aside class="sidebar order-sidebar">
+          <a class="brand brand-light" href="#" data-go="dashboard"><span class="brand-mark">CM</span><span>CARGA<span>MATCH</span></span></a>
+          <nav aria-label="Navegación principal">
+            <button class="nav-item" data-go="dashboard"><span>⌂</span> Inicio</button>
+            <button class="nav-item"><span>▤</span> Solicitudes <small>3</small></button>
+            <button class="nav-item active"><span>▣</span> Viajes</button>
+          </nav>
+          <div class="sidebar-user"><div class="avatar">AM</div><div><b>Ana Martínez</b><small>Productor</small></div><button aria-label="Cerrar sesión" data-go="login">↪</button></div>
+        </aside>
+        <main class="main-content order-main">
+          <header class="topbar order-topbar"><button class="menu-button" aria-label="Abrir menú">☰</button><button class="back-link" data-go="confirmed">← Volver al viaje</button><div class="document-state"><i>✓</i> Documento generado</div><div class="top-actions"><div class="avatar">AM</div></div></header>
+          <div class="order-workspace">
+            <div class="order-toolbar">
+              <div><p class="eyebrow">DOCUMENTACIÓN</p><h1 id="order-title">Orden de servicio</h1><p>Documento generado automáticamente con los datos confirmados.</p></div>
+              <div class="order-actions"><button class="button order-secondary">▧ Enviar por correo</button><button class="button button-primary" data-print>↓ Descargar PDF</button></div>
+            </div>
+            <div class="document-layout">
+              <article class="service-document" aria-label="Vista previa de la orden de servicio">
+                <header class="document-header">
+                  <div class="document-brand"><span class="brand-mark">CM</span><div><b>CARGA<span>MATCH</span></b><small>Asignación inteligente de transporte</small></div></div>
+                  <div class="document-number"><small>ORDEN DE SERVICIO</small><b>OS-CM-1048</b><span>Emitida el 26 sep 2026</span></div>
+                </header>
+                <section class="document-status"><span><i>✓</i> SERVICIO CONFIRMADO</span><p>Folio de viaje <b>CM-026-1048</b></p></section>
+                <section class="document-parties">
+                  <div><small>SOLICITANTE</small><h2>Industrias Regiomontanas S.A.</h2><p>Ana Martínez · Productor</p><p>Monterrey, Nuevo León</p></div>
+                  <div><small>TRANSPORTISTA</small><h2>Transportes MX</h2><p>Mariana López · Contacto operativo</p><p>Empresa verificada por CargaMatch</p></div>
+                </section>
+                <section class="document-section route-document-section">
+                  <div class="document-section-title"><span>01</span><h3>Ruta y programación</h3></div>
+                  <div class="document-route">
+                    <div><small>ORIGEN</small><b>Monterrey, Nuevo León</b><p>Recolección · 2 oct 2026 · 08:00 h</p></div>
+                    <span><i></i><em>87 km</em><i></i><b>→</b></span>
+                    <div><small>DESTINO</small><b>Saltillo, Coahuila</b><p>Entrega estimada · 2 oct 2026</p></div>
+                  </div>
+                </section>
+                <section class="document-section">
+                  <div class="document-section-title"><span>02</span><h3>Descripción del servicio</h3></div>
+                  <table class="service-table">
+                    <thead><tr><th>Concepto</th><th>Descripción</th><th>Unidad / Cantidad</th></tr></thead>
+                    <tbody><tr><td>Mercancía</td><td>Autopartes</td><td>8,000 kg</td></tr><tr><td>Equipo requerido</td><td>Caja seca de 48 pies</td><td>1 unidad</td></tr><tr><td>Servicio</td><td>Transporte terrestre dedicado</td><td>Monterrey → Saltillo</td></tr></tbody>
+                  </table>
+                </section>
+                <section class="document-section commercial-section">
+                  <div class="document-section-title"><span>03</span><h3>Condiciones comerciales</h3></div>
+                  <div class="commercial-grid"><div><small>SUBTOTAL DEL SERVICIO</small><b>$14,800.00 MXN</b><p>Casetas y seguro incluidos</p></div><div><small>FORMA DE PAGO</small><b>Según acuerdo comercial</b><p>Por definir entre las partes</p></div></div>
+                </section>
+                <section class="terms-block"><b>Condiciones del servicio</b><p>El transportista confirma disponibilidad, capacidad y equipo para la fecha indicada. Cualquier cambio deberá registrarse en CargaMatch y notificarse a ambas partes.</p></section>
+                <section class="signature-row"><div><span></span><b>Ana Martínez</b><small>Solicitante</small></div><div><span></span><b>Mariana López</b><small>Transportes MX</small></div></section>
+                <footer class="document-footer"><span>Documento generado por CargaMatch</span><span>Página 1 de 1</span><span>OS-CM-1048</span></footer>
+              </article>
+              <aside class="document-sidepanel">
+                <div class="document-ready"><span>✓</span><div><b>Documento listo</b><small>Todos los datos fueron validados.</small></div></div>
+                <div class="sidepanel-section"><small>INCLUYE</small><ul><li><i>✓</i> Datos del productor</li><li><i>✓</i> Transportista asignado</li><li><i>✓</i> Ruta y programación</li><li><i>✓</i> Carga y vehículo</li><li><i>✓</i> Precio acordado</li></ul></div>
+                <div class="sidepanel-section file-info"><small>ARCHIVO</small><p><span>▧</span><b>OS-CM-1048.pdf</b><em>PDF · 1 página</em></p></div>
+                <button class="button button-primary button-block" data-print>↓ Descargar orden</button>
+                <button class="button button-block dashboard-return" data-go="dashboard">Finalizar y volver al inicio</button>
+                <p class="legal-note">Este documento es una orden de servicio demostrativa para el MVP.</p>
+              </aside>
+            </div>
+          </div>
+        </main>
+      </section>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
