@@ -5,7 +5,9 @@ const money = value => new Intl.NumberFormat('es-MX', { style: 'currency', curre
 const dateText = value => value ? new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' }).format(new Date(`${value}T12:00:00`)) : 'Por confirmar'
 const initials = value => value?.split(/\s+/).map(x => x[0]).join('').slice(0, 2).toUpperCase() || 'CM'
 const SESSION_KEY = 'cargamatch_user'
+const COMPANY_TRIP_KEY = 'cargamatch_company_trip'
 function readSession() { try { return JSON.parse(localStorage.getItem(SESSION_KEY)) } catch { return null } }
+function readCompanyTrip() { try { return JSON.parse(localStorage.getItem(COMPANY_TRIP_KEY)) } catch { return null } }
 
 function Brand({ dark = false }) {
   return <button className={`flex items-center gap-3 text-left font-extrabold tracking-tight ${dark ? 'text-white' : 'text-navy'}`}><span className="grid h-10 w-10 place-items-center rounded-lg bg-wine text-sm text-white">CM</span><span>CARGA<span className="text-wine">MATCH</span></span></button>
@@ -21,7 +23,7 @@ function Sidebar({ page, go }) {
     <Brand dark />
     <nav className="mt-12 space-y-2">
       {[['dashboard','Inicio','⌂'],['create','Nueva carga','＋'],['requests','Solicitudes','▤'],['trips','Viajes','▣']].map(([id,label,icon]) =>
-        <button key={id} onClick={() => ['dashboard','create','requests'].includes(id) && go(id)} className={`nav ${page === id ? 'nav-active' : ''}`}><span>{icon}</span>{label}{id === 'requests' && <em>3</em>}</button>)}
+        <button key={id} onClick={() => ['dashboard','create','requests','trips'].includes(id) && go(id)} className={`nav ${page === id ? 'nav-active' : ''}`}><span>{icon}</span>{label}{id === 'requests' && <em>3</em>}</button>)}
     </nav>
     <div className="mt-auto border-t border-white/10 pt-5"><div className="flex items-center gap-3"><span className="avatar">{initials(session?.name)}</span><div><b className="block text-sm">{session?.name || 'Empresa demo'}</b><small className="text-white/55">Empresa</small></div></div><button onClick={()=>{localStorage.removeItem(SESSION_KEY);go('login')}} className="mt-4 text-xs font-bold text-white/45 hover:text-white">Cerrar sesión</button></div>
   </aside>
@@ -73,6 +75,12 @@ function Offers({ go, shipment, chooseOffer, busy }) {
     {error&&<div className="auth-error mb-5 flex items-center justify-between"><span>{error}</span><button onClick={load}>Reintentar</button></div>}
     {loading?<div className="grid gap-4"><div className="skeleton-card"/><div className="skeleton-card"/></div>:offers.length?<div className="space-y-4">{offers.map((offer,index)=>{const id=offer.offer_id??offer.id; const name=offer.carrier_name||offer.name||`Transportista #${offer.carrier_id}`; return <article className="match-card" key={id??index}><div className="flex items-center gap-4"><span className="carrier-logo">{initials(name)}</span><div><h2 className="text-xl font-extrabold">{name}</h2><p className="text-sm text-slate-500">Oferta #{id}</p></div></div><div className="score"><b>{index+1}</b><span>posición por precio</span></div><div className="text-sm"><b className="block">Estado: {offer.status||'PENDING'}</b><p className="mt-2 text-slate-500">La empresa conserva la decisión final; elegir esta propuesta asignará el viaje.</p></div><div className="text-right"><small className="eyebrow">COTIZACIÓN</small><b className="mt-1 block text-2xl">{money(offer.price)}</b><Button busy={busy===id} className="mt-3" onClick={()=>chooseOffer(offer)}>Elegir oferta →</Button></div></article>})}</div>:<div className="panel p-10 text-center"><h2 className="text-2xl font-extrabold">Aún no hay cotizaciones</h2><p className="mt-2 text-slate-500">Los transportistas pueden enviar propuestas desde su portal. Actualiza esta vista cuando recibas una.</p><Button secondary className="mt-5" onClick={load}>Actualizar ofertas</Button></div>}
   </div></Shell>
+}
+
+function CompanyTrips({ go, shipment, carrier, order }) {
+  if(!shipment||!carrier)return <Shell page="trips" go={go}><div className="page max-w-6xl"><div className="heading"><div><p className="eyebrow">OPERACIÓN LOGÍSTICA</p><h1>Viajes</h1><p>Consulta los servicios que ya fueron asignados.</p></div></div><div className="panel p-10 text-center"><span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-slate-100 text-2xl">▣</span><h2 className="mt-5 text-2xl font-extrabold">Aún no tienes viajes asignados</h2><p className="mt-2 text-slate-500">Cuando confirmes un transportista, el viaje aparecerá aquí.</p><Button className="mt-6" onClick={()=>go('requests')}>Ver solicitudes</Button></div></div></Shell>
+  const c=shipment.cargo
+  return <Shell page="trips" go={go}><div className="page max-w-6xl"><div className="heading"><div><p className="eyebrow">OPERACIÓN LOGÍSTICA</p><h1>Viajes</h1><p>Servicios confirmados por tu empresa.</p></div></div><div className="grid gap-4 md:grid-cols-3"><article className="panel metric"><span className="metric-icon">▰</span><div><small>ASIGNADOS</small><b>01</b><p>Viaje activo</p></div></article><article className="panel metric"><span className="metric-icon">⌁</span><div><small>EN OPERACIÓN</small><b>01</b><p>Seguimiento disponible</p></div></article><article className="panel metric"><span className="metric-icon">✓</span><div><small>DOCUMENTOS</small><b>{order?'01':'00'}</b><p>{order?'Orden generada':'Pendiente de generar'}</p></div></article></div><section className="panel mt-6 p-6"><div className="flex flex-col gap-6 lg:flex-row lg:items-center"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-3"><span className="status">CM-{String(shipment.shipment_id).padStart(4,'0')}</span><span className="rounded-full bg-rose-100 px-3 py-1.5 text-xs font-extrabold text-wine">● ASIGNADO</span></div><h2 className="mt-4 text-2xl font-extrabold">{c.origin} <span className="text-wine">→</span> {c.destination}</h2><p className="mt-2 text-slate-500">{c.cargo_type} · {Number(c.weight_kg).toLocaleString('es-MX')} kg · {c.vehicle_type}</p><div className="mt-5 flex flex-wrap gap-5 text-sm font-bold text-slate-500"><span>▣ {dateText(c.date)}</span><span>Transportista: {carrier.name}</span><span>{money(carrier.quote??carrier.price)}</span></div></div><Button onClick={()=>go(order?'order':'confirmed')}>Abrir operación →</Button></div></section></div></Shell>
 }
 
 function Create({ go, text, setText, submit, busy }) {
@@ -237,11 +245,12 @@ function CarrierBidStatus({ go, trip }) {
 
 export default function App() {
   const existingSession=readSession()
+  const savedCompanyTrip=readCompanyTrip()
   const [page,setPage]=useState(existingSession?.role==='transportista'?'carrier-dashboard':existingSession?'dashboard':'login')
   const [text,setText]=useState('Necesito transportar 15 toneladas de material de construcción de Chihuahua a Ciudad Juárez el próximo lunes.')
-  const [shipment,setShipment]=useState(null)
-  const [carrier,setCarrier]=useState(null)
-  const [order,setOrder]=useState(null)
+  const [shipment,setShipment]=useState(savedCompanyTrip?.shipment||null)
+  const [carrier,setCarrier]=useState(savedCompanyTrip?.carrier||null)
+  const [order,setOrder]=useState(savedCompanyTrip?.order||null)
   const [carrierQuote,setCarrierQuote]=useState(null)
   const [selectedTrip,setSelectedTrip]=useState(null)
   const [acceptedTrip,setAcceptedTrip]=useState(()=>{try{return JSON.parse(localStorage.getItem('cargamatch_pending_trip'))}catch{return null}})
@@ -276,13 +285,13 @@ export default function App() {
   }
   async function choose(match,index) {
     setBusy(`carrier-${index}`)
-    try { await confirmarViaje(shipment.shipment_id,match); setCarrier(match); setPage('confirmed') }
+    try { await confirmarViaje(shipment.shipment_id,match); setCarrier(match); localStorage.setItem(COMPANY_TRIP_KEY,JSON.stringify({shipment,carrier:match,order:null})); setPage('confirmed') }
     catch(error){fail(error)} finally{setBusy(null)}
   }
   async function generate() {
     setBusy('order')
     const tab=window.open('', '_blank')
-    try { const data=await generarOrden(shipment.shipment_id); setOrder(data); setPage('order'); if(tab) tab.location=data.pdf_url }
+    try { const data=await generarOrden(shipment.shipment_id); setOrder(data); localStorage.setItem(COMPANY_TRIP_KEY,JSON.stringify({shipment,carrier,order:data})); setPage('order'); if(tab) tab.location=data.pdf_url }
     catch(error){tab?.close();fail(error)} finally{setBusy(null)}
   }
   function submitCarrierQuote(quote) {
@@ -318,7 +327,9 @@ export default function App() {
     setBusy(`offer-${offerId}`)
     try {
       await elegirOferta(shipment.shipment_id,offerId)
-      setCarrier({carrier_id:offer.carrier_id,name:offer.carrier_name||offer.name||'Transportista seleccionado',quote:offer.price,price:offer.price})
+      const chosen={carrier_id:offer.carrier_id,name:offer.carrier_name||offer.name||'Transportista seleccionado',quote:offer.price,price:offer.price}
+      setCarrier(chosen)
+      localStorage.setItem(COMPANY_TRIP_KEY,JSON.stringify({shipment,carrier:chosen,order:null}))
       setPage('confirmed')
     } catch(error){fail(error)} finally{setBusy(null)}
   }
@@ -329,6 +340,7 @@ export default function App() {
     {page==='login'&&<Login authenticate={authenticate} busy={busy==='auth'} error={authError}/>} 
     {page==='dashboard'&&<Dashboard {...props}/>} 
     {page==='requests'&&<Requests {...props} shipment={shipment} carrier={carrier} order={order} viewOffers={viewOffers}/>} 
+    {page==='trips'&&<CompanyTrips {...props} shipment={shipment} carrier={carrier} order={order}/>} 
     {page==='offers'&&shipment&&<Offers {...props} shipment={shipment} chooseOffer={chooseAuctionOffer} busy={busy?.startsWith('offer-')?Number(busy.split('-')[1]):null}/>} 
     {page==='create'&&<Create {...props} text={text} setText={setText} submit={submit} busy={busy==='create'}/>} 
     {page==='review'&&shipment&&<Review {...props} shipment={shipment}/>} 
