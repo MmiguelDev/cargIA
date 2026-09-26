@@ -2309,9 +2309,10 @@ function LiveCarrierTrip({ go, trip, offer }) {
   );
 }
 
-function PendingCarrierDashboard({ go, selectTrip, pendingTrip }) {
+function PendingCarrierDashboard({ go, selectTrip, openAssigned, pendingTrip }) {
   const session = readSession();
   const [trips, setTrips] = useState([]);
+  const [assignedTrips, setAssignedTrips] = useState([]);
   const [assignedCount, setAssignedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -2326,6 +2327,7 @@ function PendingCarrierDashboard({ go, selectTrip, pendingTrip }) {
           : Promise.resolve({ trips: [] }),
       ]);
       setTrips(available.trips || []);
+      setAssignedTrips(assigned.trips || []);
       setAssignedCount((assigned.trips || []).length);
     } catch (err) {
       setError(err.message);
@@ -2364,7 +2366,7 @@ function PendingCarrierDashboard({ go, selectTrip, pendingTrip }) {
               pendingTrip ? "01" : "00",
               pendingTrip ? "Esperando a la empresa" : "Sin postulaciones",
             ],
-            ["Viajes autorizados", "00", "Confirmados por empresas"],
+            ["Viajes autorizados", loading ? "—" : String(assignedCount).padStart(2, "0"), "Confirmados por empresas"],
           ].map((x, i) => (
             <article className="panel metric" key={x[0]}>
               <span className="metric-icon">{["▤", "⌁", "✓"][i]}</span>
@@ -2381,6 +2383,29 @@ function PendingCarrierDashboard({ go, selectTrip, pendingTrip }) {
             <span>{error}</span>
             <button onClick={loadTrips}>Reintentar</button>
           </div>
+        )}
+        {assignedTrips.length > 0 && (
+          <section className="panel mb-7 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-extrabold">Mis viajes asignados</h2>
+                <p className="text-sm text-slate-500">Servicios confirmados para tu perfil en Supabase.</p>
+              </div>
+              <span className="status">{assignedTrips.length} activos</span>
+            </div>
+            <div className="space-y-3">
+              {assignedTrips.map((trip) => (
+                <article key={trip.shipment_id} className="flex flex-col gap-4 rounded-xl border border-line p-4 lg:flex-row lg:items-center">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2"><span className="status">CM-{String(trip.shipment_id).padStart(4, "0")}</span><span className="rounded-full bg-rose-100 px-3 py-1.5 text-xs font-extrabold text-wine">● {trip.status}</span></div>
+                    <h3 className="mt-3 text-lg font-extrabold">{trip.origin} <span className="text-wine">→</span> {trip.destination}</h3>
+                    <p className="mt-1 text-sm text-slate-500">{trip.cargo_type} · {Number(trip.weight_kg).toLocaleString("es-MX")} kg · {money(trip.price)}</p>
+                  </div>
+                  <Button onClick={() => openAssigned(trip)}>Abrir operación →</Button>
+                </article>
+              ))}
+            </div>
+          </section>
         )}
         <div className="mt-7 grid gap-5 xl:grid-cols-[1fr_310px]">
           <section>
@@ -2993,14 +3018,30 @@ function CarrierBidStatus({ go, trip }) {
     setLoading(true);
     setError("");
     try {
-      const data = await listarOfertas(trip.shipment_id);
-      setOffer(
-        (data.offers || []).find(
-          (item) =>
-            String(item.carrier_id) === String(session?.id) ||
-            item.carrier_name === session?.name,
-        ) || null,
-      );
+      if (session?.carrier_id) {
+        const assigned = await misViajes(session.carrier_id);
+        const liveTrip = (assigned.trips || []).find(
+          (item) => String(item.shipment_id) === String(trip.shipment_id),
+        );
+        if (liveTrip) {
+          trip.status = liveTrip.status;
+          trip.price = liveTrip.price;
+          setStatus(liveTrip.status || "ASSIGNED");
+          setOffer({ status: "ACCEPTED", price: liveTrip.price });
+        } else {
+          const data = await listarOfertas(trip.shipment_id);
+          setOffer(
+            (data.offers || []).find(
+              (item) =>
+                String(item.carrier_id) === String(session.carrier_id) ||
+                String(item.carrier_id) === String(session.id) ||
+                item.carrier_name === session.name,
+            ) || null,
+          );
+        }
+      } else {
+        setError("Cierra sesión y vuelve a iniciar para actualizar tu perfil de transportista.");
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -3248,20 +3289,41 @@ export default function App() {
       const offers = data.offers || [];
       setShipment((current) => {
         if (!current) return current;
-        const updatedMatches = (current.matches || []).map((match) => {
-          const offer = offers.find(
-            (o) => String(o.carrier_id) === String(match.carrier_id),
+        const updatedMatches = [...(current.matches || [])];
+        offers.forEach((offer) => {
+          const index = updatedMatches.findIndex(
+            (match) =>
+              String(match.carrier_id) === String(offer.carrier_id) ||
+              match.name === offer.carrier_name,
           );
-          return offer
-            ? {
-                ...match,
-                quote: offer.price ?? match.quote,
-                status: offer.status || match.status,
-              }
-            : match;
+          const normalized = {
+            carrier_id: offer.carrier_id,
+            name: offer.carrier_name || offer.name || "Transportista",
+            quote: offer.price,
+            price: offer.price,
+            score: index >= 0 ? updatedMatches[index].score : 0,
+            vehicle_type:
+              index >= 0
+                ? updatedMatches[index].vehicle_type
+                : current.cargo.vehicle_type,
+            reason:
+              index >= 0
+                ? updatedMatches[index].reason
+                : "Cotización recibida de un transportista compatible.",
+            status: offer.status || "PENDING",
+          };
+          if (index >= 0) updatedMatches[index] = { ...updatedMatches[index], ...normalized };
+          else updatedMatches.push(normalized);
         });
+        updatedMatches.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
         return { ...current, matches: updatedMatches };
       });
+      setNotice(
+        offers.length
+          ? `${offers.length} cotización${offers.length === 1 ? "" : "es"} actualizada${offers.length === 1 ? "" : "s"}.`
+          : "No hay cotizaciones nuevas para esta solicitud.",
+      );
+      setTimeout(() => setNotice(null), 4500);
     } catch (error) {
       fail(error);
     } finally {
@@ -3460,6 +3522,7 @@ export default function App() {
           <PendingCarrierDashboard
             {...props}
             selectTrip={selectAvailableTrip}
+            openAssigned={selectAssignedTrip}
             pendingTrip={acceptedTrip}
           />
         )}
