@@ -103,7 +103,21 @@
   .role-picker button span { @apply mt-1 text-xs text-slate-400 }
   .role-picker button.active { @apply border-wine bg-rose-50 text-wine ring-2 ring-rose-100 }
   .auth-error { @apply mt-5 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-wine }
+  .request-table { @apply min-w-[860px] }
+  .request-row { @apply grid grid-cols-[120px_1.5fr_1fr_110px_130px_90px] items-center gap-4 border-b border-line px-5 py-4 text-sm last:border-b-0 }
+  .request-row > div { @apply flex flex-col }
+  .request-row small { @apply mt-1 text-xs font-medium text-slate-400 }
+  .request-row > button { @apply text-right text-sm font-extrabold text-wine disabled:text-slate-300 }
+  .request-row.live { @apply bg-rose-50/40 }
+  .request-head { @apply bg-slate-50 py-3 text-xs font-extrabold uppercase tracking-wider text-slate-400 }
+  .request-status { @apply w-fit rounded-full px-3 py-1.5 text-xs font-extrabold }
+  .status-publicada { @apply bg-blue-100 text-blue-700 }
+  .status-asignada, .status-orden-generada { @apply bg-rose-100 text-wine }
+  .status-borrador { @apply bg-slate-100 text-slate-500 }
+  .skeleton-card { @apply h-40 animate-pulse rounded-xl bg-slate-200 }
 }
+
+.panel:has(.request-table) { overflow-x:auto }
 
 .route-bg { position:absolute; width:620px; height:620px; right:-220px; top:18%; border:1px solid rgba(255,255,255,.08); border-radius:50%; box-shadow:0 0 0 90px rgba(255,255,255,.025),0 0 0 180px rgba(255,255,255,.02) }
 .screen-enter { animation: enter .24s ease-out }
