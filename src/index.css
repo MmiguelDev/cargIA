@@ -94,6 +94,15 @@
   .trip-progress div.done { @apply text-navy }
   .trip-progress div.done > span { @apply border-wine bg-wine text-white }
   .trip-progress div.done > i { @apply bg-wine }
+  .auth-tabs { @apply grid grid-cols-2 rounded-lg bg-slate-100 p-1 }
+  .auth-tabs button { @apply rounded-md px-3 py-2.5 text-sm font-extrabold text-slate-400 transition }
+  .auth-tabs button.active { @apply bg-white text-navy shadow-sm }
+  .role-picker { @apply mt-6 grid grid-cols-2 gap-3 }
+  .role-picker button { @apply flex flex-col rounded-lg border border-line p-4 text-left transition }
+  .role-picker button b { @apply text-sm font-extrabold }
+  .role-picker button span { @apply mt-1 text-xs text-slate-400 }
+  .role-picker button.active { @apply border-wine bg-rose-50 text-wine ring-2 ring-rose-100 }
+  .auth-error { @apply mt-5 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-wine }
 }
 
 .route-bg { position:absolute; width:620px; height:620px; right:-220px; top:18%; border:1px solid rgba(255,255,255,.08); border-radius:50%; box-shadow:0 0 0 90px rgba(255,255,255,.025),0 0 0 180px rgba(255,255,255,.02) }

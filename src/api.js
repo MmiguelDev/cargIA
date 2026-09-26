@@ -22,6 +22,8 @@ async function post(path, body) {
 }
 
 export const crearSolicitud = text => post('solicitud', { text })
+export const registrar = ({ name, email, password, role = 'empresa' }) => post('registro', { name, email, password, role })
+export const iniciarSesion = ({ email, password }) => post('login', { email, password })
 export const confirmarViaje = (shipment_id, carrier) => post('confirmar', {
   shipment_id,
   carrier_id: carrier.carrier_id,

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { confirmarViaje, crearSolicitud, generarOrden } from './api'
+import { confirmarViaje, crearSolicitud, generarOrden, iniciarSesion, registrar } from './api'
 
 const money = value => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(value || 0)
 const dateText = value => value ? new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' }).format(new Date(`${value}T12:00:00`)) : 'Por confirmar'
 const initials = value => value?.split(/\s+/).map(x => x[0]).join('').slice(0, 2).toUpperCase() || 'CM'
+const SESSION_KEY = 'cargamatch_user'
+function readSession() { try { return JSON.parse(localStorage.getItem(SESSION_KEY)) } catch { return null } }
 
 function Brand({ dark = false }) {
   return <button className={`flex items-center gap-3 text-left font-extrabold tracking-tight ${dark ? 'text-white' : 'text-navy'}`}><span className="grid h-10 w-10 place-items-center rounded-lg bg-wine text-sm text-white">CM</span><span>CARGA<span className="text-wine">MATCH</span></span></button>
@@ -14,30 +16,37 @@ function Button({ children, secondary = false, busy = false, className = '', ...
 }
 
 function Sidebar({ page, go }) {
+  const session=readSession()
   return <aside className="hidden w-64 shrink-0 flex-col bg-navy px-5 py-6 text-white lg:flex">
     <Brand dark />
     <nav className="mt-12 space-y-2">
       {[['dashboard','Inicio','⌂'],['create','Nueva carga','＋'],['requests','Solicitudes','▤'],['trips','Viajes','▣']].map(([id,label,icon]) =>
         <button key={id} onClick={() => ['dashboard','create'].includes(id) && go(id)} className={`nav ${page === id ? 'nav-active' : ''}`}><span>{icon}</span>{label}{id === 'requests' && <em>3</em>}</button>)}
     </nav>
-    <div className="mt-auto flex items-center gap-3 border-t border-white/10 pt-5"><span className="avatar">AM</span><div><b className="block text-sm">Ana Martínez</b><small className="text-white/55">Productor</small></div></div>
+    <div className="mt-auto border-t border-white/10 pt-5"><div className="flex items-center gap-3"><span className="avatar">{initials(session?.name)}</span><div><b className="block text-sm">{session?.name || 'Empresa demo'}</b><small className="text-white/55">Empresa</small></div></div><button onClick={()=>{localStorage.removeItem(SESSION_KEY);go('login')}} className="mt-4 text-xs font-bold text-white/45 hover:text-white">Cerrar sesión</button></div>
   </aside>
 }
 
 function Shell({ page, go, children, back }) {
-  return <div className="min-h-screen bg-cloud lg:flex"><Sidebar page={page} go={go} /><main className="min-w-0 flex-1"><header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line/70 bg-cloud/90 px-5 backdrop-blur lg:px-10"><div className="lg:hidden"><Brand /></div>{back ? <button className="hidden text-sm font-bold text-slate-600 hover:text-wine lg:block" onClick={back}>← Volver</button> : <span /> }<div className="flex items-center gap-3"><span className="hidden text-xs font-bold uppercase tracking-widest text-slate-500 sm:block">Operación segura</span><span className="avatar">AM</span></div></header>{children}</main></div>
+  const session=readSession()
+  return <div className="min-h-screen bg-cloud lg:flex"><Sidebar page={page} go={go} /><main className="min-w-0 flex-1"><header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line/70 bg-cloud/90 px-5 backdrop-blur lg:px-10"><div className="lg:hidden"><Brand /></div>{back ? <button className="hidden text-sm font-bold text-slate-600 hover:text-wine lg:block" onClick={back}>← Volver</button> : <span /> }<div className="flex items-center gap-3"><span className="hidden text-xs font-bold uppercase tracking-widest text-slate-500 sm:block">Operación segura</span><span className="avatar">{initials(session?.name)}</span></div></header>{children}</main></div>
 }
 
 function Steps({ current }) {
   return <ol className="steps">{['Describe','Revisa','Asigna'].map((label, i) => <li key={label} className={i + 1 <= current ? 'active' : ''}><span>{i + 1 < current ? '✓' : i + 1}</span><b>{label}</b></li>)}</ol>
 }
 
-function Login({ go }) {
-  return <div className="grid min-h-screen bg-navy lg:grid-cols-[1.15fr_.85fr]"><section className="relative flex flex-col justify-between overflow-hidden p-8 text-white lg:p-16"><Brand dark /><div className="relative z-10 max-w-2xl py-20"><p className="eyebrow text-rose-200">LOGÍSTICA, RESUELTA</p><h1 className="mt-5 text-5xl font-extrabold leading-[1.08] tracking-tight md:text-7xl">De una necesidad<br/>a un viaje asignado.</h1><p className="mt-7 max-w-xl text-lg leading-8 text-blue-100/75">Productores y transportistas coordinan cargas, cotizaciones y viajes desde un mismo lugar.</p></div><div className="grid gap-3 text-sm text-blue-100/65 sm:grid-cols-3"><span>Cargas estructuradas</span><span>Matches comparables</span><span>Operación centralizada</span></div><div className="route-bg" /></section><section className="grid place-items-center bg-slate-100 p-6"><div className="panel w-full max-w-md p-8 lg:p-10"><p className="eyebrow">ACCESO AL MVP</p><h2 className="mt-3 text-3xl font-extrabold text-ink">Bienvenido</h2><p className="mt-2 text-slate-500">Elige el perfil que quieres explorar.</p><label className="field-label mt-8">Correo electrónico<input className="field" defaultValue="demo@cargamatch.mx" /></label><label className="field-label">Contraseña<input className="field" type="password" defaultValue="cargamatch" /></label><Button className="mt-3 w-full" onClick={() => go('dashboard')}>Entrar como productor →</Button><Button secondary className="mt-3 w-full" onClick={() => go('carrier-dashboard')}>Entrar como transportista</Button><p className="mt-5 text-center text-xs font-bold text-slate-400">● DATOS DE DEMOSTRACIÓN LISTOS</p></div></section></div>
+function Login({ authenticate, busy, error }) {
+  const [mode,setMode]=useState('login')
+  const [form,setForm]=useState({name:'',email:'miguel.demo@cargamatch.com',password:'Demo1234',role:'empresa'})
+  const update=(key,value)=>setForm(current=>({...current,[key]:value}))
+  const submit=event=>{event.preventDefault();authenticate(mode,form)}
+  return <div className="grid min-h-screen bg-navy lg:grid-cols-[1.15fr_.85fr]"><section className="relative flex flex-col justify-between overflow-hidden p-8 text-white lg:p-16"><Brand dark/><div className="relative z-10 max-w-2xl py-20"><p className="eyebrow text-rose-200">LOGÍSTICA, RESUELTA</p><h1 className="mt-5 text-5xl font-extrabold leading-[1.08] tracking-tight md:text-7xl">De una necesidad<br/>a un viaje asignado.</h1><p className="mt-7 max-w-xl text-lg leading-8 text-blue-100/75">Productores y transportistas coordinan cargas, cotizaciones y viajes desde un mismo lugar.</p></div><div className="grid gap-3 text-sm text-blue-100/65 sm:grid-cols-3"><span>Cargas estructuradas</span><span>Matches comparables</span><span>Operación centralizada</span></div><div className="route-bg"/></section><section className="grid place-items-center bg-slate-100 p-6"><form onSubmit={submit} className="panel w-full max-w-md p-8 lg:p-10"><div className="auth-tabs"><button type="button" className={mode==='login'?'active':''} onClick={()=>setMode('login')}>Iniciar sesión</button><button type="button" className={mode==='register'?'active':''} onClick={()=>setMode('register')}>Crear cuenta</button></div><p className="eyebrow mt-7">{mode==='login'?'ACCESO A CARGAMATCH':'REGISTRO DE USUARIO'}</p><h2 className="mt-3 text-3xl font-extrabold text-ink">{mode==='login'?'Bienvenido de vuelta':'Crea tu cuenta'}</h2><p className="mt-2 text-slate-500">{mode==='login'?'Ingresa con tu correo y contraseña.':'Elige cómo participarás en la plataforma.'}</p>{mode==='register'&&<><label className="field-label mt-7">NOMBRE COMPLETO<input className="field" value={form.name} onChange={e=>update('name',e.target.value)} autoComplete="name" required/></label><div className="role-picker"><button type="button" className={form.role==='empresa'?'active':''} onClick={()=>update('role','empresa')}><b>Empresa</b><span>Publicar cargas</span></button><button type="button" className={form.role==='transportista'?'active':''} onClick={()=>update('role','transportista')}><b>Transportista</b><span>Cotizar viajes</span></button></div></>}<label className={`field-label ${mode==='login'?'mt-8':'mt-6'}`}>CORREO ELECTRÓNICO<input className="field" type="email" value={form.email} onChange={e=>update('email',e.target.value)} autoComplete="email" required/></label><label className="field-label">CONTRASEÑA<input className="field" type="password" minLength={6} value={form.password} onChange={e=>update('password',e.target.value)} autoComplete={mode==='login'?'current-password':'new-password'} required/></label>{mode==='register'&&<p className="-mt-3 text-xs text-slate-400">Usa al menos 6 caracteres.</p>}{error&&<div className="auth-error" role="alert">{error}</div>}<Button busy={busy} className="mt-5 w-full" type="submit">{busy?'Procesando…':mode==='login'?'Iniciar sesión →':'Crear cuenta →'}</Button>{mode==='login'&&<p className="mt-5 text-center text-xs text-slate-400">Prueba: miguel.demo@cargamatch.com · Demo1234</p>}</form></section></div>
 }
 
 function Dashboard({ go }) {
-  return <Shell page="dashboard" go={go}><div className="page"><div className="heading"><div><p className="eyebrow">OPERACIÓN DEL DÍA</p><h1>Buenos días, Ana.</h1><p>Tu operación logística está bajo control.</p></div><Button onClick={() => go('create')}>＋ Crear nueva carga</Button></div><div className="grid gap-4 md:grid-cols-3">{[['Solicitudes activas','03','2 esta semana'],['Viajes en curso','01','Entrega mañana'],['Cotizaciones','06','3 por revisar']].map((x,i)=><article className="panel metric" key={x[0]}><span className="metric-icon">{['▤','▰','⌁'][i]}</span><div><small>{x[0]}</small><b>{x[1]}</b><p>{x[2]}</p></div></article>)}</div><div className="mt-5 grid gap-5 xl:grid-cols-[1.55fr_.75fr]"><section className="panel p-6"><div className="flex items-center justify-between"><div><h2 className="text-xl font-extrabold">Actividad reciente</h2><p className="text-sm text-slate-500">Solicitudes y viajes de tu empresa</p></div><button className="text-sm font-bold text-wine">Ver todas →</button></div><div className="mt-5 divide-y divide-line">{[['MTY → SLW','Autopartes · 8,000 kg','3 cotizaciones','$14,800'],['QRO → GDL','Electrodomésticos · 4,500 kg','En tránsito','$21,300'],['CDMX → PUE','Empaque · 2,200 kg','Publicada','—']].map(row=><div className="grid gap-2 py-4 sm:grid-cols-[110px_1fr_auto_auto] sm:items-center" key={row[0]}><b className="route-pill">{row[0]}</b><span className="font-bold">{row[1]}</span><span className="status">{row[2]}</span><strong>{row[3]}</strong></div>)}</div></section><aside className="rounded-xl bg-navy p-7 text-white shadow-panel"><p className="eyebrow text-rose-200">✦ CARGAMATCH AI</p><h2 className="mt-5 text-3xl font-extrabold">¿Tienes algo que mover?</h2><p className="mt-3 leading-7 text-blue-100/65">Describe qué necesitas transportar y encontraremos las mejores opciones.</p><Button className="mt-8 w-full" onClick={() => go('create')}>Crear con IA →</Button></aside></div></div></Shell>
+  const session=readSession(); const firstName=session?.name?.split(' ')[0]||'equipo'
+  return <Shell page="dashboard" go={go}><div className="page"><div className="heading"><div><p className="eyebrow">OPERACIÓN DEL DÍA</p><h1>Buenos días, {firstName}.</h1><p>Tu operación logística está bajo control.</p></div><Button onClick={() => go('create')}>＋ Crear nueva carga</Button></div><div className="grid gap-4 md:grid-cols-3">{[['Solicitudes activas','03','2 esta semana'],['Viajes en curso','01','Entrega mañana'],['Cotizaciones','06','3 por revisar']].map((x,i)=><article className="panel metric" key={x[0]}><span className="metric-icon">{['▤','▰','⌁'][i]}</span><div><small>{x[0]}</small><b>{x[1]}</b><p>{x[2]}</p></div></article>)}</div><div className="mt-5 grid gap-5 xl:grid-cols-[1.55fr_.75fr]"><section className="panel p-6"><div className="flex items-center justify-between"><div><h2 className="text-xl font-extrabold">Actividad reciente</h2><p className="text-sm text-slate-500">Solicitudes y viajes de tu empresa</p></div><button className="text-sm font-bold text-wine">Ver todas →</button></div><div className="mt-5 divide-y divide-line">{[['MTY → SLW','Autopartes · 8,000 kg','3 cotizaciones','$14,800'],['QRO → GDL','Electrodomésticos · 4,500 kg','En tránsito','$21,300'],['CDMX → PUE','Empaque · 2,200 kg','Publicada','—']].map(row=><div className="grid gap-2 py-4 sm:grid-cols-[110px_1fr_auto_auto] sm:items-center" key={row[0]}><b className="route-pill">{row[0]}</b><span className="font-bold">{row[1]}</span><span className="status">{row[2]}</span><strong>{row[3]}</strong></div>)}</div></section><aside className="rounded-xl bg-navy p-7 text-white shadow-panel"><p className="eyebrow text-rose-200">✦ CARGAMATCH AI</p><h2 className="mt-5 text-3xl font-extrabold">¿Tienes algo que mover?</h2><p className="mt-3 leading-7 text-blue-100/65">Describe qué necesitas transportar y encontraremos las mejores opciones.</p><Button className="mt-8 w-full" onClick={() => go('create')}>Crear con IA →</Button></aside></div></div></Shell>
 }
 
 function Create({ go, text, setText, submit, busy }) {
@@ -82,12 +91,14 @@ const carrierLoads = [
 ]
 
 function CarrierSidebar({ page, go }) {
+  const session=readSession()
   const items=[['carrier-dashboard','Cargas disponibles','▤'],['carrier-trip','Mis viajes','▰'],['carrier-quotes','Cotizaciones','$'],['carrier-profile','Mi flotilla','▣']]
-  return <aside className="hidden w-64 shrink-0 flex-col bg-navy px-5 py-6 text-white lg:flex"><Brand dark/><span className="mt-5 w-fit rounded bg-white/10 px-3 py-1 text-[11px] font-extrabold tracking-widest text-blue-100">PORTAL TRANSPORTISTA</span><nav className="mt-10 space-y-2">{items.map(([id,label,icon])=><button key={id} onClick={()=>['carrier-dashboard','carrier-trip'].includes(id)&&go(id)} className={`nav ${page===id?'nav-active':''}`}><span>{icon}</span>{label}{id==='carrier-dashboard'&&<em>3</em>}</button>)}</nav><div className="mt-auto border-t border-white/10 pt-5"><div className="flex items-center gap-3"><span className="avatar bg-rose-100 text-wine">TN</span><div><b className="block text-sm">Transportes Norte</b><small className="text-white/55">Cuenta verificada</small></div></div><button onClick={()=>go('login')} className="mt-4 text-xs font-bold text-white/45 hover:text-white">Cerrar sesión</button></div></aside>
+  return <aside className="hidden w-64 shrink-0 flex-col bg-navy px-5 py-6 text-white lg:flex"><Brand dark/><span className="mt-5 w-fit rounded bg-white/10 px-3 py-1 text-[11px] font-extrabold tracking-widest text-blue-100">PORTAL TRANSPORTISTA</span><nav className="mt-10 space-y-2">{items.map(([id,label,icon])=><button key={id} onClick={()=>['carrier-dashboard','carrier-trip'].includes(id)&&go(id)} className={`nav ${page===id?'nav-active':''}`}><span>{icon}</span>{label}{id==='carrier-dashboard'&&<em>3</em>}</button>)}</nav><div className="mt-auto border-t border-white/10 pt-5"><div className="flex items-center gap-3"><span className="avatar bg-rose-100 text-wine">{initials(session?.name)}</span><div><b className="block text-sm">{session?.name||'Transportista'}</b><small className="text-white/55">Cuenta transportista</small></div></div><button onClick={()=>{localStorage.removeItem(SESSION_KEY);go('login')}} className="mt-4 text-xs font-bold text-white/45 hover:text-white">Cerrar sesión</button></div></aside>
 }
 
 function CarrierShell({ page, go, children, back }) {
-  return <div className="min-h-screen bg-cloud lg:flex"><CarrierSidebar page={page} go={go}/><main className="min-w-0 flex-1"><header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line/70 bg-cloud/90 px-5 backdrop-blur lg:px-10"><div className="lg:hidden"><Brand/></div>{back?<button className="hidden text-sm font-bold text-slate-600 hover:text-wine lg:block" onClick={back}>← Volver a cargas</button>:<span/>}<div className="flex items-center gap-3"><span className="hidden rounded-full bg-rose-50 px-3 py-1.5 text-xs font-extrabold text-wine sm:block">● Disponible para recibir cargas</span><span className="avatar">TN</span></div></header>{children}</main></div>
+  const session=readSession()
+  return <div className="min-h-screen bg-cloud lg:flex"><CarrierSidebar page={page} go={go}/><main className="min-w-0 flex-1"><header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line/70 bg-cloud/90 px-5 backdrop-blur lg:px-10"><div className="lg:hidden"><Brand/></div>{back?<button className="hidden text-sm font-bold text-slate-600 hover:text-wine lg:block" onClick={back}>← Volver a cargas</button>:<span/>}<div className="flex items-center gap-3"><span className="hidden rounded-full bg-rose-50 px-3 py-1.5 text-xs font-extrabold text-wine sm:block">● Disponible para recibir cargas</span><span className="avatar">{initials(session?.name)}</span></div></header>{children}</main></div>
 }
 
 function CarrierDashboard({ go, quoteSubmitted }) {
@@ -113,7 +124,8 @@ function CarrierTrip({ go }) {
 }
 
 export default function App() {
-  const [page,setPage]=useState('login')
+  const existingSession=readSession()
+  const [page,setPage]=useState(existingSession?.role==='transportista'?'carrier-dashboard':existingSession?'dashboard':'login')
   const [text,setText]=useState('Necesito transportar 15 toneladas de material de construcción de Chihuahua a Ciudad Juárez el próximo lunes.')
   const [shipment,setShipment]=useState(null)
   const [carrier,setCarrier]=useState(null)
@@ -121,8 +133,21 @@ export default function App() {
   const [carrierQuote,setCarrierQuote]=useState(null)
   const [busy,setBusy]=useState(null)
   const [notice,setNotice]=useState(null)
+  const [authError,setAuthError]=useState('')
   const go=useMemo(()=>name=>setPage(name),[])
   const fail=error=>{setNotice(error.message || 'Ocurrió un error inesperado.');setTimeout(()=>setNotice(null),6000)}
+
+  async function authenticate(mode,form) {
+    setAuthError('')
+    if(form.password.length<6){setAuthError('La contraseña debe tener al menos 6 caracteres.');return}
+    setBusy('auth')
+    try {
+      const data=mode==='register'?await registrar(form):await iniciarSesion(form)
+      localStorage.setItem(SESSION_KEY,JSON.stringify(data.user))
+      setPage(data.user.role==='transportista'?'carrier-dashboard':'dashboard')
+    } catch(error) { setAuthError(error.message || 'No pudimos completar el acceso.') }
+    finally { setBusy(null) }
+  }
 
   async function submit() {
     if(text.trim().length<10){fail(new Error('Describe tu carga con al menos 10 caracteres.'));return}
@@ -150,5 +175,5 @@ export default function App() {
 
   useEffect(()=>{ window.scrollTo({top:0,behavior:'smooth'}) },[page])
   const props={go}
-  return <><div key={page} className="screen-enter">{page==='login'&&<Login {...props}/>} {page==='dashboard'&&<Dashboard {...props}/>} {page==='create'&&<Create {...props} text={text} setText={setText} submit={submit} busy={busy==='create'}/>} {page==='review'&&shipment&&<Review {...props} shipment={shipment}/>} {page==='analysis'&&shipment&&<Analysis {...props} shipment={shipment}/>} {page==='matches'&&shipment&&<Matches {...props} shipment={shipment} choose={choose} busyIndex={busy?.startsWith('carrier-')?Number(busy.split('-')[1]):-1}/>} {page==='confirmed'&&shipment&&carrier&&<Confirmed {...props} shipment={shipment} carrier={carrier} generate={generate} busy={busy==='order'}/>} {page==='order'&&order&&<Order {...props} shipment={shipment} carrier={carrier} order={order}/>} {page==='carrier-dashboard'&&<CarrierDashboard {...props} quoteSubmitted={Boolean(carrierQuote)}/>} {page==='carrier-load'&&<CarrierLoad {...props}/>} {page==='carrier-quote'&&<CarrierQuote {...props} submitQuote={submitCarrierQuote}/>} {page==='carrier-trip'&&<CarrierTrip {...props}/>}</div>{notice&&<div className="notice" role="alert"><b>{notice.startsWith('Cotización')?'Operación exitosa':'No se pudo completar'}</b><span>{notice}</span><button onClick={()=>setNotice(null)}>×</button></div>}</>
+  return <><div key={page} className="screen-enter">{page==='login'&&<Login authenticate={authenticate} busy={busy==='auth'} error={authError}/>} {page==='dashboard'&&<Dashboard {...props}/>} {page==='create'&&<Create {...props} text={text} setText={setText} submit={submit} busy={busy==='create'}/>} {page==='review'&&shipment&&<Review {...props} shipment={shipment}/>} {page==='analysis'&&shipment&&<Analysis {...props} shipment={shipment}/>} {page==='matches'&&shipment&&<Matches {...props} shipment={shipment} choose={choose} busyIndex={busy?.startsWith('carrier-')?Number(busy.split('-')[1]):-1}/>} {page==='confirmed'&&shipment&&carrier&&<Confirmed {...props} shipment={shipment} carrier={carrier} generate={generate} busy={busy==='order'}/>} {page==='order'&&order&&<Order {...props} shipment={shipment} carrier={carrier} order={order}/>} {page==='carrier-dashboard'&&<CarrierDashboard {...props} quoteSubmitted={Boolean(carrierQuote)}/>} {page==='carrier-load'&&<CarrierLoad {...props}/>} {page==='carrier-quote'&&<CarrierQuote {...props} submitQuote={submitCarrierQuote}/>} {page==='carrier-trip'&&<CarrierTrip {...props}/>}</div>{notice&&<div className="notice" role="alert"><b>{notice.startsWith('Cotización')?'Operación exitosa':'No se pudo completar'}</b><span>{notice}</span><button onClick={()=>setNotice(null)}>×</button></div>}</>
 }
