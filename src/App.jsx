@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { confirmarViaje, crearSolicitud, generarOrden, iniciarSesion, registrar, viajesDisponibles } from './api'
+import { actualizarEtapa, confirmarViaje, crearSolicitud, elegirOferta, enviarOferta, generarOrden, iniciarSesion, listarOfertas, registrar, viajesDisponibles } from './api'
 
 const money = value => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(value || 0)
 const dateText = value => value ? new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' }).format(new Date(`${value}T12:00:00`)) : 'Por confirmar'
@@ -49,11 +49,30 @@ function Dashboard({ go }) {
   return <Shell page="dashboard" go={go}><div className="page"><div className="heading"><div><p className="eyebrow">OPERACIÓN DEL DÍA</p><h1>Buenos días, {firstName}.</h1><p>Tu operación logística está bajo control.</p></div><Button onClick={() => go('create')}>＋ Crear nueva carga</Button></div><div className="grid gap-4 md:grid-cols-3">{[['Solicitudes activas','03','2 esta semana'],['Viajes en curso','01','Entrega mañana'],['Cotizaciones','06','3 por revisar']].map((x,i)=><article className="panel metric" key={x[0]}><span className="metric-icon">{['▤','▰','⌁'][i]}</span><div><small>{x[0]}</small><b>{x[1]}</b><p>{x[2]}</p></div></article>)}</div><div className="mt-5 grid gap-5 xl:grid-cols-[1.55fr_.75fr]"><section className="panel p-6"><div className="flex items-center justify-between"><div><h2 className="text-xl font-extrabold">Actividad reciente</h2><p className="text-sm text-slate-500">Solicitudes y viajes de tu empresa</p></div><button className="text-sm font-bold text-wine">Ver todas →</button></div><div className="mt-5 divide-y divide-line">{[['MTY → SLW','Autopartes · 8,000 kg','3 cotizaciones','$14,800'],['QRO → GDL','Electrodomésticos · 4,500 kg','En tránsito','$21,300'],['CDMX → PUE','Empaque · 2,200 kg','Publicada','—']].map(row=><div className="grid gap-2 py-4 sm:grid-cols-[110px_1fr_auto_auto] sm:items-center" key={row[0]}><b className="route-pill">{row[0]}</b><span className="font-bold">{row[1]}</span><span className="status">{row[2]}</span><strong>{row[3]}</strong></div>)}</div></section><aside className="rounded-xl bg-navy p-7 text-white shadow-panel"><p className="eyebrow text-rose-200">✦ CARGAMATCH AI</p><h2 className="mt-5 text-3xl font-extrabold">¿Tienes algo que mover?</h2><p className="mt-3 leading-7 text-blue-100/65">Describe qué necesitas transportar y encontraremos las mejores opciones.</p><Button className="mt-8 w-full" onClick={() => go('create')}>Crear con IA →</Button></aside></div></div></Shell>
 }
 
-function Requests({ go, shipment, carrier, order }) {
+function Requests({ go, shipment, carrier, order, viewOffers }) {
   const live=shipment?{id:`CM-${String(shipment.shipment_id).padStart(4,'0')}`,route:`${shipment.cargo.origin} → ${shipment.cargo.destination}`,cargo:shipment.cargo.cargo_type,weight:`${Number(shipment.cargo.weight_kg).toLocaleString('es-MX')} kg`,date:dateText(shipment.cargo.date),status:order?'Orden generada':carrier?'Asignada':'Publicada',quotes:shipment.matches?.length||0,live:true}:null
   const rows=[live,{id:'CM-1048',route:'Monterrey → Saltillo',cargo:'Autopartes',weight:'8,000 kg',date:'2 de octubre de 2026',status:'Asignada',quotes:3},{id:'CM-1052',route:'Querétaro → Guadalajara',cargo:'Electrodomésticos',weight:'4,500 kg',date:'4 de octubre de 2026',status:'Publicada',quotes:2},{id:'CM-1057',route:'Ciudad de México → Puebla',cargo:'Material de empaque',weight:'2,200 kg',date:'5 de octubre de 2026',status:'Borrador',quotes:0}].filter(Boolean)
-  function open(row){if(!row.live)return;if(order)go('order');else if(carrier)go('confirmed');else if(shipment.matches?.length)go('matches');else go('review')}
+  function open(row){if(!row.live)return;if(order)go('order');else if(carrier)go('confirmed');else viewOffers()}
   return <Shell page="requests" go={go} back={()=>go('dashboard')}><div className="page max-w-7xl"><div className="heading"><div><p className="eyebrow">OPERACIÓN LOGÍSTICA</p><h1>Solicitudes</h1><p>Consulta el estado de las cargas creadas en CargaMatch.</p></div><Button onClick={()=>go('create')}>＋ Nueva solicitud</Button></div><div className="grid gap-4 md:grid-cols-3"><article className="panel metric"><span className="metric-icon">▤</span><div><small>TOTAL</small><b>{String(rows.length).padStart(2,'0')}</b><p>Solicitudes visibles</p></div></article><article className="panel metric"><span className="metric-icon">⌁</span><div><small>PUBLICADAS</small><b>{String(rows.filter(x=>x.status==='Publicada').length).padStart(2,'0')}</b><p>Buscando transportista</p></div></article><article className="panel metric"><span className="metric-icon">✓</span><div><small>ASIGNADAS</small><b>{String(rows.filter(x=>['Asignada','Orden generada'].includes(x.status)).length).padStart(2,'0')}</b><p>Con transportista</p></div></article></div><section className="panel mt-6 overflow-hidden"><div className="flex flex-col gap-3 border-b border-line p-5 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-extrabold">Historial de solicitudes</h2><p className="text-sm text-slate-500">La solicitud de esta sesión aparece primero.</p></div><span className="status">Todas</span></div><div className="request-table"><div className="request-row request-head"><span>Solicitud</span><span>Ruta y carga</span><span>Fecha</span><span>Cotizaciones</span><span>Estado</span><span></span></div>{rows.map(row=><article key={row.id} className={`request-row ${row.live?'live':''}`}><div><b>{row.id}</b>{row.live&&<small>Sesión actual</small>}</div><div><b>{row.route}</b><small>{row.cargo} · {row.weight}</small></div><span>{row.date}</span><strong>{row.quotes}</strong><span className={`request-status status-${row.status.toLowerCase().replace(' ','-')}`}>{row.status}</span><button disabled={!row.live} onClick={()=>open(row)}>{row.live?'Abrir →':'Demo'}</button></article>)}</div></section><p className="mt-4 text-center text-xs text-slate-400">Los registros de demostración sirven como referencia visual. La API todavía no ofrece un endpoint de historial.</p></div></Shell>
+}
+
+function Offers({ go, shipment, chooseOffer, busy }) {
+  const [offers,setOffers]=useState([])
+  const [loading,setLoading]=useState(true)
+  const [error,setError]=useState('')
+  async function load(){
+    setLoading(true); setError('')
+    try { const data=await listarOfertas(shipment.shipment_id); setOffers(data.offers||[]) }
+    catch(err){ setError(err.message) }
+    finally { setLoading(false) }
+  }
+  useEffect(()=>{load()},[shipment.shipment_id])
+  return <Shell page="requests" go={go} back={()=>go('requests')}><div className="page max-w-6xl">
+    <div className="heading"><div><p className="eyebrow">SUBASTA DE TRANSPORTE</p><h1>Cotizaciones recibidas</h1><p>{shipment.cargo.origin} → {shipment.cargo.destination}</p></div><button className="filter-active" onClick={load}>↻ Actualizar</button></div>
+    <div className="panel mb-5 p-6"><div className="grid gap-4 sm:grid-cols-4"><Info label="SOLICITUD" value={`CM-${String(shipment.shipment_id).padStart(4,'0')}`}/><Info label="MERCANCÍA" value={shipment.cargo.cargo_type}/><Info label="PESO" value={`${Number(shipment.cargo.weight_kg).toLocaleString('es-MX')} kg`}/><Info label="OFERTAS" value={String(offers.length)}/></div></div>
+    {error&&<div className="auth-error mb-5 flex items-center justify-between"><span>{error}</span><button onClick={load}>Reintentar</button></div>}
+    {loading?<div className="grid gap-4"><div className="skeleton-card"/><div className="skeleton-card"/></div>:offers.length?<div className="space-y-4">{offers.map((offer,index)=>{const id=offer.offer_id??offer.id; const name=offer.carrier_name||offer.name||`Transportista #${offer.carrier_id}`; return <article className="match-card" key={id??index}><div className="flex items-center gap-4"><span className="carrier-logo">{initials(name)}</span><div><h2 className="text-xl font-extrabold">{name}</h2><p className="text-sm text-slate-500">Oferta #{id}</p></div></div><div className="score"><b>{index+1}</b><span>posición por precio</span></div><div className="text-sm"><b className="block">Estado: {offer.status||'PENDING'}</b><p className="mt-2 text-slate-500">La empresa conserva la decisión final; elegir esta propuesta asignará el viaje.</p></div><div className="text-right"><small className="eyebrow">COTIZACIÓN</small><b className="mt-1 block text-2xl">{money(offer.price)}</b><Button busy={busy===id} className="mt-3" onClick={()=>chooseOffer(offer)}>Elegir oferta →</Button></div></article>})}</div>:<div className="panel p-10 text-center"><h2 className="text-2xl font-extrabold">Aún no hay cotizaciones</h2><p className="mt-2 text-slate-500">Los transportistas pueden enviar propuestas desde su portal. Actualiza esta vista cuando recibas una.</p><Button secondary className="mt-5" onClick={load}>Actualizar ofertas</Button></div>}
+  </div></Shell>
 }
 
 function Create({ go, text, setText, submit, busy }) {
@@ -168,14 +187,52 @@ function PendingCarrierDashboard({ go, selectTrip, pendingTrip }) {
   </div></CarrierShell>
 }
 
-function PendingCarrierLoad({ go, trip, submitInterest }) {
+function PendingCarrierLoad({ go, trip, submitInterest, busy }) {
+  const [price,setPrice]=useState('')
   if(!trip) return <CarrierShell page="carrier-dashboard" go={go}><div className="page"><div className="panel p-10 text-center"><h1 className="text-2xl font-extrabold">Selecciona un viaje disponible</h1><Button className="mt-5" onClick={()=>go('carrier-dashboard')}>Ver viajes</Button></div></div></CarrierShell>
-  return <CarrierShell page="carrier-dashboard" go={go} back={()=>go('carrier-dashboard')}><div className="page max-w-6xl"><div className="heading"><div><span className="status">CM-{String(trip.shipment_id).padStart(4,'0')}</span><h1>{trip.origin} → {trip.destination}</h1><p>Enviar disponibilidad no asigna ni autoriza el viaje.</p></div><Button onClick={submitInterest}>Enviar disponibilidad →</Button></div><div className="grid gap-5 lg:grid-cols-[1.4fr_.7fr]"><section className="panel p-7"><div className="route-map-pro"><div><small>ORIGEN</small><b>{trip.origin}</b><span>{dateText(trip.travel_date)}</span></div><i><em>Ruta publicada</em></i><div className="text-right"><small>DESTINO</small><b>{trip.destination}</b><span>Entrega por coordinar</span></div></div><hr className="my-7 border-line"/><h2 className="section-title"><span>01</span>Información de la carga</h2><div className="mt-6 grid gap-5 sm:grid-cols-2"><Info label="MERCANCÍA" value={trip.cargo_type}/><Info label="PESO TOTAL" value={`${Number(trip.weight_kg).toLocaleString('es-MX')} kg`}/><Info label="EQUIPO REQUERIDO" value={trip.vehicle_type}/><Info label="ESTADO" value="PUBLICADO"/></div></section><aside className="space-y-5"><section className="panel p-6"><small className="eyebrow">POSTULACIÓN</small><h2 className="mt-3 text-xl font-extrabold">Confirma tu disponibilidad</h2><p className="mt-2 text-sm leading-6 text-slate-500">La empresa recibirá tu interés y decidirá si te asigna el servicio.</p><Button className="mt-5 w-full" onClick={submitInterest}>Estoy disponible</Button></section><section className="ready mt-0">El estado permanecerá pendiente hasta que la empresa confirme al transportista.</section></aside></div></div></CarrierShell>
+  const send=()=>{const amount=Number(price); if(!amount||amount<=0)return; submitInterest(amount)}
+  return <CarrierShell page="carrier-dashboard" go={go} back={()=>go('carrier-dashboard')}><div className="page max-w-6xl"><div className="heading"><div><span className="status">CM-{String(trip.shipment_id).padStart(4,'0')}</span><h1>{trip.origin} → {trip.destination}</h1><p>Tu cotización quedará pendiente hasta que la empresa la confirme.</p></div></div><div className="grid gap-5 lg:grid-cols-[1.4fr_.7fr]"><section className="panel p-7"><div className="route-map-pro"><div><small>ORIGEN</small><b>{trip.origin}</b><span>{dateText(trip.travel_date)}</span></div><i><em>Ruta publicada</em></i><div className="text-right"><small>DESTINO</small><b>{trip.destination}</b><span>Entrega por coordinar</span></div></div><hr className="my-7 border-line"/><h2 className="section-title"><span>01</span>Información de la carga</h2><div className="mt-6 grid gap-5 sm:grid-cols-2"><Info label="MERCANCÍA" value={trip.cargo_type}/><Info label="PESO TOTAL" value={`${Number(trip.weight_kg).toLocaleString('es-MX')} kg`}/><Info label="EQUIPO REQUERIDO" value={trip.vehicle_type}/><Info label="ESTADO" value="PUBLICADO"/></div></section><aside className="space-y-5"><section className="panel p-6"><small className="eyebrow">TU COTIZACIÓN</small><h2 className="mt-3 text-xl font-extrabold">¿Cuánto cobrarías?</h2><p className="mt-2 text-sm leading-6 text-slate-500">Incluye casetas, operación y los conceptos que consideres en el precio final.</p><label className="field-label mt-5">PRECIO EN MXN<input className="field" type="number" min="1" step="100" value={price} onChange={event=>setPrice(event.target.value)} placeholder="Ej. 14500"/></label><Button busy={submitInterest.busy} disabled={!Number(price)} className="mt-5 w-full" onClick={send}>Enviar cotización →</Button></section><section className="ready mt-0">Enviar una cotización no asigna el viaje. La empresa elegirá al ganador.</section></aside></div></div></CarrierShell>
 }
 
 function PendingCarrierTrip({ go, trip }) {
   if(!trip) return <CarrierShell page="carrier-trip" go={go}><div className="page"><div className="panel p-10 text-center"><h1 className="text-2xl font-extrabold">No tienes postulaciones pendientes</h1><Button className="mt-5" onClick={()=>go('carrier-dashboard')}>Ver disponibles</Button></div></div></CarrierShell>
   return <CarrierShell page="carrier-trip" go={go}><div className="page max-w-6xl"><div className="heading"><div><p className="eyebrow">SOLICITUD CM-{String(trip.shipment_id).padStart(4,'0')}</p><h1>{trip.origin} → {trip.destination}</h1><p>{trip.cargo_type} · {Number(trip.weight_kg).toLocaleString('es-MX')} kg</p></div><span className="rounded-full bg-amber-100 px-4 py-2 text-sm font-extrabold text-amber-800">● PENDIENTE DE CONFIRMACIÓN</span></div><div className="panel mb-5 p-6"><div className="trip-progress"><div className="done"><span>✓</span><b>Disponibilidad enviada</b><i/></div><div><span>2</span><b>Confirmación de empresa</b><i/></div><div><span>3</span><b>Viaje asignado</b><i/></div><div><span>4</span><b>En operación</b></div></div></div><div className="grid gap-5 lg:grid-cols-[1.35fr_.7fr]"><section className="panel p-7"><div className="route-map-pro"><div><small>ORIGEN</small><b>{trip.origin}</b><span>{dateText(trip.travel_date)}</span></div><i><em>Pendiente</em></i><div className="text-right"><small>DESTINO</small><b>{trip.destination}</b><span>Por coordinar</span></div></div><div className="mt-7 grid gap-4 border-t border-line pt-6 sm:grid-cols-2"><Info label="MERCANCÍA" value={trip.cargo_type}/><Info label="PESO" value={`${Number(trip.weight_kg).toLocaleString('es-MX')} kg`}/><Info label="EQUIPO" value={trip.vehicle_type}/><Info label="AUTORIZACIÓN" value="Pendiente de la empresa"/></div></section><aside className="rounded-xl bg-navy p-6 text-white shadow-panel"><small className="eyebrow text-rose-200">SIGUIENTE PASO</small><h2 className="mt-3 text-xl font-extrabold">Esperar confirmación</h2><p className="mt-2 text-sm leading-6 text-blue-100/65">No se reservó ni asignó el viaje. Cuando la empresa elija transportista, el estado cambiará a confirmado.</p><Button secondary className="mt-6 w-full" onClick={()=>go('carrier-dashboard')}>Volver a disponibles</Button></aside></div></div></CarrierShell>
+}
+
+function CompanyConfirmed({ go, shipment, carrier, generate, busy }) {
+  const [status,setStatus]=useState('ASSIGNED')
+  const [stageBusy,setStageBusy]=useState(false)
+  const [error,setError]=useState('')
+  async function confirmDelivery(){
+    setStageBusy(true); setError('')
+    try { const data=await actualizarEtapa(shipment.shipment_id,'entregado','empresa'); setStatus(data.status||'ENTREGADO') }
+    catch(err){setError(err.message)} finally{setStageBusy(false)}
+  }
+  const c=shipment.cargo
+  return <Shell page="trips" go={go}><div className="page max-w-6xl">
+    <section className="mb-5 flex flex-col gap-5 rounded-xl border border-rose-200 bg-rose-50 p-7 md:flex-row md:items-center"><span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-wine text-2xl font-extrabold text-white">✓</span><div><p className="eyebrow">ASIGNACIÓN COMPLETADA</p><h1 className="mt-1 text-3xl font-extrabold">Viaje confirmado</h1><p className="mt-1 text-slate-600">{carrier.name} recibió la asignación.</p></div><span className="md:ml-auto rounded-full bg-white px-4 py-2 text-sm font-extrabold text-wine">● {status}</span></section>
+    <div className="grid gap-5 lg:grid-cols-[1.35fr_.7fr]"><section className="panel p-7"><div className="route-map-pro"><div><small>RECOLECCIÓN</small><b>{c.origin}</b><span>{dateText(c.date)}</span></div><i><em>CM-{String(shipment.shipment_id).padStart(4,'0')}</em></i><div className="text-right"><small>ENTREGA</small><b>{c.destination}</b><span>Por coordinar</span></div></div><div className="mt-7 grid gap-4 border-t border-line pt-6 sm:grid-cols-2"><Info label="TRANSPORTISTA" value={carrier.name}/><Info label="PRECIO" value={money(carrier.quote??carrier.price)}/><Info label="MERCANCÍA" value={c.cargo_type}/><Info label="EQUIPO" value={c.vehicle_type}/></div></section><aside className="space-y-5"><section className="panel p-6"><small className="eyebrow">DOCUMENTACIÓN</small><h2 className="mt-3 text-xl font-extrabold">Orden de servicio</h2><p className="mt-2 text-sm leading-6 text-slate-500">Genera el PDF con los datos definitivos del viaje.</p><Button busy={busy} className="mt-5 w-full" onClick={generate}>Generar orden PDF ↗</Button></section><section className="panel p-6"><small className="eyebrow">CIERRE DEL VIAJE</small><h2 className="mt-3 text-xl font-extrabold">Confirmación de entrega</h2><p className="mt-2 text-sm leading-6 text-slate-500">Solo la empresa puede marcar la carga como entregada, después del tránsito.</p>{error&&<div className="auth-error mt-4">{error}</div>}<Button secondary busy={stageBusy} disabled={status==='ENTREGADO'} className="mt-5 w-full" onClick={confirmDelivery}>{status==='ENTREGADO'?'Entrega confirmada ✓':'Confirmar entrega'}</Button></section></aside></div>
+  </div></Shell>
+}
+
+function CarrierBidStatus({ go, trip }) {
+  const session=readSession()
+  const [offer,setOffer]=useState(null)
+  const [loading,setLoading]=useState(true)
+  const [error,setError]=useState('')
+  const [status,setStatus]=useState('ASSIGNED')
+  const [busy,setBusy]=useState(false)
+  async function refresh(){
+    if(!trip)return
+    setLoading(true); setError('')
+    try { const data=await listarOfertas(trip.shipment_id); setOffer((data.offers||[]).find(item=>String(item.carrier_id)===String(session?.id)||item.carrier_name===session?.name)||null) }
+    catch(err){setError(err.message)} finally{setLoading(false)}
+  }
+  useEffect(()=>{refresh()},[trip?.shipment_id,session?.id])
+  async function advance(stage){setBusy(true);setError('');try{const data=await actualizarEtapa(trip.shipment_id,stage,'transportista');setStatus(data.status||(stage==='recoleccion'?'EN_RECOLECCION':'EN_TRANSITO'))}catch(err){setError(err.message)}finally{setBusy(false)}}
+  if(!trip)return <PendingCarrierTrip go={go} trip={trip}/>
+  const accepted=offer?.status==='ACCEPTED'
+  return <CarrierShell page="carrier-trip" go={go}><div className="page max-w-6xl"><div className="heading"><div><p className="eyebrow">SOLICITUD CM-{String(trip.shipment_id).padStart(4,'0')}</p><h1>{trip.origin} → {trip.destination}</h1><p>{trip.cargo_type} · {Number(trip.weight_kg).toLocaleString('es-MX')} kg</p></div><span className={`rounded-full px-4 py-2 text-sm font-extrabold ${accepted?'bg-rose-100 text-wine':'bg-amber-100 text-amber-800'}`}>● {loading?'CONSULTANDO':accepted?status:(offer?.status||'PENDING')}</span></div>{error&&<div className="auth-error mb-5">{error}</div>}<div className="grid gap-5 lg:grid-cols-[1.35fr_.7fr]"><section className="panel p-7"><div className="route-map-pro"><div><small>ORIGEN</small><b>{trip.origin}</b><span>{dateText(trip.travel_date)}</span></div><i><em>{accepted?'Viaje autorizado':'Oferta en revisión'}</em></i><div className="text-right"><small>DESTINO</small><b>{trip.destination}</b><span>Por coordinar</span></div></div><div className="mt-7 grid gap-4 border-t border-line pt-6 sm:grid-cols-2"><Info label="MERCANCÍA" value={trip.cargo_type}/><Info label="EQUIPO" value={trip.vehicle_type}/><Info label="COTIZACIÓN" value={offer?.price?money(offer.price):'Consultando'}/><Info label="DECISIÓN" value={offer?.status||'Pendiente'}/></div></section><aside className="space-y-5"><section className="panel p-6"><small className="eyebrow">SIGUIENTE ACCIÓN</small><h2 className="mt-3 text-xl font-extrabold">{accepted?'Actualiza la operación':'Espera la decisión'}</h2><p className="mt-2 text-sm leading-6 text-slate-500">{accepted?'Puedes avanzar recolección y tránsito. La empresa confirmará la entrega.':'La carga no se asignará hasta que la empresa elija una oferta.'}</p>{accepted&&<div className="mt-5 grid gap-3"><Button busy={busy} disabled={status!=='ASSIGNED'} onClick={()=>advance('recoleccion')}>Iniciar recolección</Button><Button secondary busy={busy} disabled={status!=='EN_RECOLECCION'} onClick={()=>advance('transito')}>Iniciar tránsito</Button></div>}<Button secondary className="mt-3 w-full" onClick={refresh}>Actualizar estado</Button></section></aside></div></div></CarrierShell>
 }
 
 export default function App() {
@@ -187,7 +244,7 @@ export default function App() {
   const [order,setOrder]=useState(null)
   const [carrierQuote,setCarrierQuote]=useState(null)
   const [selectedTrip,setSelectedTrip]=useState(null)
-  const [acceptedTrip,setAcceptedTrip]=useState(null)
+  const [acceptedTrip,setAcceptedTrip]=useState(()=>{try{return JSON.parse(localStorage.getItem('cargamatch_pending_trip'))}catch{return null}})
   const [takeOffer,setTakeOffer]=useState(null)
   const [busy,setBusy]=useState(null)
   const [notice,setNotice]=useState(null)
@@ -235,14 +292,52 @@ export default function App() {
     setPage('carrier-dashboard')
   }
   function selectAvailableTrip(trip) { setSelectedTrip(trip); setPage('carrier-load') }
-  function acceptAvailableTrip() {
+  async function acceptAvailableTrip(price) {
     if(!selectedTrip){fail(new Error('Selecciona un viaje antes de enviar tu disponibilidad.'));return}
-    setAcceptedTrip(selectedTrip)
-    setTakeOffer(null)
-    setPage('carrier-trip')
+    const session=readSession()
+    if(!session?.id){fail(new Error('Inicia sesión nuevamente para enviar tu cotización.'));return}
+    setBusy('offer')
+    try {
+      const data=await enviarOferta(selectedTrip.shipment_id,session,price)
+      setCarrierQuote(data.offer||{price,status:'PENDING'})
+      setAcceptedTrip(selectedTrip)
+      localStorage.setItem('cargamatch_pending_trip',JSON.stringify(selectedTrip))
+      setNotice('Cotización enviada correctamente. La empresa ya puede revisarla.')
+      setPage('carrier-trip')
+    } catch(error){fail(error)} finally{setBusy(null)}
+  }
+
+  function viewOffers(){
+    if(!shipment){fail(new Error('Crea una solicitud antes de revisar ofertas.'));return}
+    setPage('offers')
+  }
+
+  async function chooseAuctionOffer(offer){
+    const offerId=offer.offer_id??offer.id
+    if(!offerId){fail(new Error('La oferta no incluye un identificador válido.'));return}
+    setBusy(`offer-${offerId}`)
+    try {
+      await elegirOferta(shipment.shipment_id,offerId)
+      setCarrier({carrier_id:offer.carrier_id,name:offer.carrier_name||offer.name||'Transportista seleccionado',quote:offer.price,price:offer.price})
+      setPage('confirmed')
+    } catch(error){fail(error)} finally{setBusy(null)}
   }
 
   useEffect(()=>{ window.scrollTo({top:0,behavior:'smooth'}) },[page])
   const props={go}
-  return <><div key={page} className="screen-enter">{page==='login'&&<Login authenticate={authenticate} busy={busy==='auth'} error={authError}/>} {page==='dashboard'&&<Dashboard {...props}/>} {page==='requests'&&<Requests {...props} shipment={shipment} carrier={carrier} order={order}/>} {page==='create'&&<Create {...props} text={text} setText={setText} submit={submit} busy={busy==='create'}/>} {page==='review'&&shipment&&<Review {...props} shipment={shipment}/>} {page==='analysis'&&shipment&&<Analysis {...props} shipment={shipment}/>} {page==='matches'&&shipment&&<Matches {...props} shipment={shipment} choose={choose} busyIndex={busy?.startsWith('carrier-')?Number(busy.split('-')[1]):-1}/>} {page==='confirmed'&&shipment&&carrier&&<Confirmed {...props} shipment={shipment} carrier={carrier} generate={generate} busy={busy==='order'}/>} {page==='order'&&order&&<Order {...props} shipment={shipment} carrier={carrier} order={order}/>} {page==='carrier-dashboard'&&<PendingCarrierDashboard {...props} selectTrip={selectAvailableTrip} pendingTrip={acceptedTrip}/>} {page==='carrier-load'&&<PendingCarrierLoad {...props} trip={selectedTrip} submitInterest={acceptAvailableTrip}/>} {page==='carrier-trip'&&<PendingCarrierTrip {...props} trip={acceptedTrip}/>}</div>{notice&&<div className="notice" role="alert"><b>{notice.startsWith('Cotización')?'Operación exitosa':'No se pudo completar'}</b><span>{notice}</span><button onClick={()=>setNotice(null)}>×</button></div>}</>
+  return <><div key={page} className="screen-enter">
+    {page==='login'&&<Login authenticate={authenticate} busy={busy==='auth'} error={authError}/>} 
+    {page==='dashboard'&&<Dashboard {...props}/>} 
+    {page==='requests'&&<Requests {...props} shipment={shipment} carrier={carrier} order={order} viewOffers={viewOffers}/>} 
+    {page==='offers'&&shipment&&<Offers {...props} shipment={shipment} chooseOffer={chooseAuctionOffer} busy={busy?.startsWith('offer-')?Number(busy.split('-')[1]):null}/>} 
+    {page==='create'&&<Create {...props} text={text} setText={setText} submit={submit} busy={busy==='create'}/>} 
+    {page==='review'&&shipment&&<Review {...props} shipment={shipment}/>} 
+    {page==='analysis'&&shipment&&<Analysis {...props} shipment={shipment}/>} 
+    {page==='matches'&&shipment&&<Matches {...props} shipment={shipment} choose={choose} busyIndex={busy?.startsWith('carrier-')?Number(busy.split('-')[1]):-1}/>} 
+    {page==='confirmed'&&shipment&&carrier&&<CompanyConfirmed {...props} shipment={shipment} carrier={carrier} generate={generate} busy={busy==='order'}/>} 
+    {page==='order'&&order&&<Order {...props} shipment={shipment} carrier={carrier} order={order}/>} 
+    {page==='carrier-dashboard'&&<PendingCarrierDashboard {...props} selectTrip={selectAvailableTrip} pendingTrip={acceptedTrip}/>} 
+    {page==='carrier-load'&&<PendingCarrierLoad {...props} trip={selectedTrip} submitInterest={acceptAvailableTrip} busy={busy==='offer'}/>} 
+    {page==='carrier-trip'&&<CarrierBidStatus {...props} trip={acceptedTrip}/>} 
+  </div>{notice&&<div className="notice" role="alert"><b>{notice.startsWith('Cotización')?'Operación exitosa':'No se pudo completar'}</b><span>{notice}</span><button onClick={()=>setNotice(null)}>×</button></div>}</>
 }

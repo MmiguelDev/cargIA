@@ -33,4 +33,12 @@ export const confirmarViaje = (shipment_id, carrier) => post('confirmar', {
 })
 export const generarOrden = shipment_id => post('orden', { shipment_id })
 export const viajesDisponibles = () => post('viajes', {})
-export const tomarViaje = (shipment_id, carrier_id) => post('tomar', { shipment_id, carrier_id })
+export const enviarOferta = (shipment_id, carrier, price) => post('ofertar', {
+  shipment_id,
+  carrier_id: carrier.id,
+  carrier_name: carrier.name,
+  price: Number(price)
+})
+export const listarOfertas = shipment_id => post('ofertas', { shipment_id })
+export const elegirOferta = (shipment_id, offer_id) => post('elegir', { shipment_id, offer_id })
+export const actualizarEtapa = (shipment_id, stage, role) => post('etapa', { shipment_id, stage, role })
