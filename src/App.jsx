@@ -57,8 +57,9 @@ function Brand({ dark = false }) {
       <span className="grid h-10 w-10 place-items-center rounded-lg bg-wine text-sm text-white">
         CM
       </span>
-      <span>
-        CARGA<span className="text-wine">MATCH</span>
+      <span className={dark ? "rounded-md bg-white px-2 py-1 leading-none" : ""}>
+        <span className="text-black">CARG</span>
+        <span className="text-wine">AI</span>
       </span>
     </button>
   );
@@ -232,7 +233,7 @@ function Login({ authenticate, busy, error }) {
             </button>
           </div>
           <p className="eyebrow mt-7">
-            {mode === "login" ? "ACCESO A CARGAMATCH" : "REGISTRO DE USUARIO"}
+            {mode === "login" ? "ACCESO A CARGAI" : "REGISTRO DE USUARIO"}
           </p>
           <h2 className="mt-3 text-3xl font-extrabold text-ink">
             {mode === "login" ? "Bienvenido de vuelta" : "Crea tu cuenta"}
@@ -401,7 +402,7 @@ function Dashboard({ go }) {
             </div>
           </section>
           <aside className="rounded-xl bg-navy p-7 text-white shadow-panel">
-            <p className="eyebrow text-rose-200">✦ CARGAMATCH AI</p>
+            <p className="eyebrow text-rose-200">✦ CARGAI</p>
             <h2 className="mt-5 text-3xl font-extrabold">
               ¿Tienes algo que mover?
             </h2>
@@ -475,7 +476,7 @@ function Requests({ go, shipment, carrier, order, viewOffers }) {
           <div>
             <p className="eyebrow">OPERACIÓN LOGÍSTICA</p>
             <h1>Solicitudes</h1>
-            <p>Consulta el estado de las cargas creadas en CargaMatch.</p>
+            <p>Consulta el estado de las cargas creadas en CARGAI.</p>
           </div>
           <Button onClick={() => go("create")}>＋ Nueva solicitud</Button>
         </div>
@@ -810,7 +811,7 @@ function Create({ go, text, setText, submit, busy }) {
             <div className="flex items-center gap-3 border-b border-line p-5">
               <span className="ai-icon">✦</span>
               <div>
-                <b className="block">CargaMatch AI</b>
+                <b className="block">CARGAI</b>
                 <small className="text-slate-500">
                   Describe tu carga en una sola frase
                 </small>
@@ -868,7 +869,7 @@ function Review({ go, shipment }) {
           <div>
             <p className="eyebrow">SOLICITUD INTERPRETADA</p>
             <h1>Revisa los datos de tu carga</h1>
-            <p>Esto es lo que CargaMatch AI entendió.</p>
+            <p>Esto es lo que CARGAI entendió.</p>
           </div>
           <span className="status">✦ Datos validados</span>
         </div>
@@ -948,7 +949,7 @@ function Analysis({ go, shipment }) {
     <div className="grid min-h-screen place-items-center bg-navy p-6 text-white">
       <div className="w-full max-w-3xl">
         <div className="text-center">
-          <p className="eyebrow text-rose-200">● CARGAMATCH AI TRABAJANDO</p>
+          <p className="eyebrow text-rose-200">● CARGAI TRABAJANDO</p>
           <h1 className="mt-5 text-4xl font-extrabold md:text-5xl">
             Encontrando el transporte ideal
           </h1>
@@ -1216,7 +1217,7 @@ function Order({ go, shipment, carrier, order }) {
               <div>
                 <small>TRANSPORTISTA</small>
                 <h2>{carrier.name}</h2>
-                <p>Empresa asignada por CargaMatch</p>
+                <p>Empresa asignada por CARGAI</p>
               </div>
             </section>
             <DocSection number="01" title="Ruta y programación">
@@ -1238,7 +1239,7 @@ function Order({ go, shipment, carrier, order }) {
               </div>
             </DocSection>
             <footer className="mt-10 flex justify-between border-t border-line pt-4 text-xs text-slate-400">
-              <span>Documento generado por CargaMatch</span>
+              <span>Documento generado por CARGAI</span>
               <span>{order.order_id}</span>
             </footer>
           </article>
@@ -1621,7 +1622,7 @@ function CarrierLoad({ go }) {
           </section>
           <aside className="space-y-5">
             <section className="panel p-6">
-              <small className="eyebrow">ESTIMACIÓN CARGAMATCH</small>
+              <small className="eyebrow">ESTIMACIÓN CARGAI</small>
               <h2 className="mt-2 text-2xl font-extrabold">{load.estimate}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 Calculado con distancia, equipo, disponibilidad y tarifas de la
@@ -2152,7 +2153,7 @@ function LiveCarrierLoad({ go, trip, take, busy }) {
               <small className="eyebrow">ASIGNACIÓN INMEDIATA</small>
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 Al tomar el viaje quedará asignado a tu cuenta. Si otro
-                transportista lo acepta primero, CargaMatch te avisará para
+                transportista lo acepta primero, CARGAI te avisará para
                 evitar una doble asignación.
               </p>
             </div>
@@ -2309,10 +2310,39 @@ function LiveCarrierTrip({ go, trip, offer }) {
   );
 }
 
-function PendingCarrierDashboard({ go, selectTrip, openAssigned, pendingTrip }) {
+const ASSIGNED_TRIP_STATUSES = new Set([
+  "ASSIGNED",
+  "ASIGNADA",
+  "ASIGNADO",
+  "EN_RECOLECCION",
+  "EN_TRANSITO",
+  "ENTREGADO",
+  "CONFIRMADO",
+]);
+
+function tripStatusKey(status) {
+  return String(status || "")
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "_");
+}
+
+function openTripsOnly(availableTrips, assignedTrips) {
+  const assignedIds = new Set(
+    assignedTrips.map((trip) => String(trip.shipment_id)),
+  );
+  return availableTrips.filter((trip) => {
+    if (assignedIds.has(String(trip.shipment_id))) return false;
+    if (trip.carrier_id) return false;
+    return !ASSIGNED_TRIP_STATUSES.has(tripStatusKey(trip.status));
+  });
+}
+
+function PendingCarrierDashboard({ go, selectTrip, pendingTrip }) {
   const session = readSession();
   const [trips, setTrips] = useState([]);
-  const [assignedTrips, setAssignedTrips] = useState([]);
   const [assignedCount, setAssignedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -2326,9 +2356,9 @@ function PendingCarrierDashboard({ go, selectTrip, openAssigned, pendingTrip }) 
           ? misViajes(session.carrier_id)
           : Promise.resolve({ trips: [] }),
       ]);
-      setTrips(available.trips || []);
-      setAssignedTrips(assigned.trips || []);
-      setAssignedCount((assigned.trips || []).length);
+      const assignedList = assigned.trips || [];
+      setTrips(openTripsOnly(available.trips || [], assignedList));
+      setAssignedCount(assignedList.length);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -2383,29 +2413,6 @@ function PendingCarrierDashboard({ go, selectTrip, openAssigned, pendingTrip }) 
             <span>{error}</span>
             <button onClick={loadTrips}>Reintentar</button>
           </div>
-        )}
-        {assignedTrips.length > 0 && (
-          <section className="panel mb-7 p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-extrabold">Mis viajes asignados</h2>
-                <p className="text-sm text-slate-500">Servicios confirmados para tu perfil en Supabase.</p>
-              </div>
-              <span className="status">{assignedTrips.length} activos</span>
-            </div>
-            <div className="space-y-3">
-              {assignedTrips.map((trip) => (
-                <article key={trip.shipment_id} className="flex flex-col gap-4 rounded-xl border border-line p-4 lg:flex-row lg:items-center">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2"><span className="status">CM-{String(trip.shipment_id).padStart(4, "0")}</span><span className="rounded-full bg-rose-100 px-3 py-1.5 text-xs font-extrabold text-wine">● {trip.status}</span></div>
-                    <h3 className="mt-3 text-lg font-extrabold">{trip.origin} <span className="text-wine">→</span> {trip.destination}</h3>
-                    <p className="mt-1 text-sm text-slate-500">{trip.cargo_type} · {Number(trip.weight_kg).toLocaleString("es-MX")} kg · {money(trip.price)}</p>
-                  </div>
-                  <Button onClick={() => openAssigned(trip)}>Abrir operación →</Button>
-                </article>
-              ))}
-            </div>
-          </section>
         )}
         <div className="mt-7 grid gap-5 xl:grid-cols-[1fr_310px]">
           <section>
@@ -3522,7 +3529,6 @@ export default function App() {
           <PendingCarrierDashboard
             {...props}
             selectTrip={selectAvailableTrip}
-            openAssigned={selectAssignedTrip}
             pendingTrip={acceptedTrip}
           />
         )}

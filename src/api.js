@@ -17,7 +17,7 @@ async function post(path, body) {
     return data
   } catch (error) {
     if (error.name === 'AbortError') throw new Error('La solicitud tardó demasiado. Intenta de nuevo.')
-    if (error instanceof TypeError) throw new Error('No pudimos conectar con CargaMatch. Revisa tu conexión e intenta de nuevo.')
+    if (error instanceof TypeError) throw new Error('No pudimos conectar con CARGAI. Revisa tu conexión e intenta de nuevo.')
     throw error
   } finally { clearTimeout(timeout) }
 }
